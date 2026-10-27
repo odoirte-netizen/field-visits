@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ====================================================================
+  PASTE YOUR WEB APP ADDRESS HERE  (the only edit you need to make)
+  ====================================================================
+  After you deploy the Google Apps Script as a Web app, you get a link
+  that ends in  /exec .  Put that whole link between the > and < below,
+  replacing the PASTE_YOUR_... text.
+
+  Example:
+  <string name="web_app_url">https://script.google.com/macros/s/AKfy....../exec</string>
+-->
+<resources>
+    <string name="web_app_url" translatable="false">PASTE_YOUR_WEB_APP_URL_HERE</string>
+</resources>
