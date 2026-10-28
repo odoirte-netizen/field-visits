@@ -4,23 +4,19 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: FieldVisits
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - run: echo "sdk.dir=$ANDROID_HOME" > local.properties && chmod +x ./gradlew
-      - name: Build
-        run: |
-          set -o pipefail
-          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log || {
-            grep -nE "error:|e: |What went wrong|Duplicate class|Exception" build.log | head -9 | while IFS= read -r l; do echo "::error::$l"; done
-            exit 1; }
+      - uses: android-actions/setup-android@v3
+      - run: chmod +x ./gradlew
+      - run: ./gradlew assembleRelease --no-daemon
       - run: mkdir -p out && cp app/build/outputs/apk/release/app-release.apk out/FieldVisits.apk
       - uses: actions/upload-artifact@v4
         with:
