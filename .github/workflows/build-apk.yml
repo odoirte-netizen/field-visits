@@ -1,0 +1,24 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FieldVisits
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: chmod +x ./gradlew
+      - run: ./gradlew assembleRelease --no-daemon
+      - run: mkdir -p out && cp app/build/outputs/apk/release/app-release.apk out/FieldVisits.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FieldVisits-APK
+          path: FieldVisits/out/FieldVisits.apk
