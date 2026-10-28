@@ -78,15 +78,48 @@ public class MainActivity extends AppCompatActivity {
                              Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOC);
         }
 
-        String url = getString(R.string.web_app_url);
-        if (url == null || url.length() < 10 || url.contains("PASTE_YOUR")) {
-            web.loadData(
-                "<html><body style='font-family:sans-serif;padding:24px;background:#0f1720;color:#eaf0f6'>"
-                + "<h3>Setup needed</h3><p>The web app address has not been set. "
-                + "Edit <b>app/src/main/res/values/config.xml</b> and rebuild.</p></body></html>",
-                "text/html", "utf-8");
-        } else {
-            web.loadUrl(url);
+        web.addJavascriptInterface(new SetupBridge(), "AndroidSetup");
+        openApp();
+    }
+
+    /** Built-in link (config.xml) wins; otherwise a link pasted on the setup screen. */
+    private String appUrl() {
+        String baked = getString(R.string.web_app_url);
+        if (validUrl(baked)) return baked.trim();
+        String saved = getSharedPreferences("fv", MODE_PRIVATE).getString("url", "");
+        return validUrl(saved) ? saved.trim() : null;
+    }
+
+    private static boolean validUrl(String u) {
+        return u != null && u.trim().startsWith("https://") && !u.contains("PASTE_YOUR");
+    }
+
+    private void openApp() {
+        String url = appUrl();
+        if (url != null) { web.loadUrl(url); return; }
+        // loadDataWithBaseURL (not loadData): loadData cuts the page at the first '#'.
+        String html =
+            "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>"
+          + "<body style='font-family:sans-serif;padding:24px;background:#0f1720;color:#eaf0f6'>"
+          + "<h2>Field Visits</h2>"
+          + "<p>Paste the web app link (it ends in <b>/exec</b>), then tap Save.</p>"
+          + "<p dir='rtl'>الصق رابط التطبيق (ينتهي بـ <b>/exec</b>) ثم اضغط حفظ.</p>"
+          + "<input id='u' style='width:100%;padding:14px;font-size:16px;border-radius:10px;border:1px solid #26323f;background:#0c131c;color:#eaf0f6' placeholder='https://script.google.com/macros/s/.../exec'>"
+          + "<button style='margin-top:14px;width:100%;padding:16px;font-size:18px;font-weight:bold;border:0;border-radius:12px;background:#2f6df6;color:#fff' "
+          + "onclick=\"var v=document.getElementById('u').value.trim();"
+          + "if(v.indexOf('https://')!==0||v.indexOf('/exec')<0){document.getElementById('m').textContent='This link should start with https:// and end with /exec';return;}"
+          + "AndroidSetup.saveUrl(v);\">Save / حفظ</button>"
+          + "<p id='m' style='color:#ff9a9a'></p></body></html>";
+        web.loadDataWithBaseURL("https://localhost/", html, "text/html", "utf-8", null);
+    }
+
+    /** Lets the setup screen store the link; exposed as window.AndroidSetup */
+    private class SetupBridge {
+        @JavascriptInterface
+        public void saveUrl(String u) {
+            if (!validUrl(u)) return;
+            getSharedPreferences("fv", MODE_PRIVATE).edit().putString("url", u.trim()).apply();
+            runOnUiThread(new Runnable() { public void run() { openApp(); } });
         }
     }
 
