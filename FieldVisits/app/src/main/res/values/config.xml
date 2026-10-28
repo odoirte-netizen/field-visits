@@ -11,5 +11,5 @@
   <string name="web_app_url">https://script.google.com/macros/s/AKfy....../exec</string>
 -->
 <resources>
-    <string name="web_app_url" translatable="false">PASTE_YOUR_WEB_APP_URL_HERE</string>
+    <string name="web_app_url" translatable="false">https://script.google.com/macros/s/AKfycbzcEuiQMHRly5q5_OOzeEcEeO8KFCt9YUgC1wuNa4097WoPOmD6ib1xASZcue71PeAUTA/exec</string>
 </resources>
