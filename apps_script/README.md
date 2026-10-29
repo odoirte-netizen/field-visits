@@ -27,8 +27,15 @@ These two files are the whole app. The Android APK just opens your `/exec` link,
 
 **Representative** — own summary, new visit, own visits by day, own customers, change password. Reps never see fake-visit flags.
 
+## Import visits from FocusQuad
+**Settings → Import visits** → choose the FocusQuad export (`Month.xlsx` / `Daily.xlsx`) →
+pick *Last day / Last 2 days / Last 7 days / Whole file* → **Import** → **Open these visits**.
+Visits already in the app are skipped, so importing the same file again is safe.
+
 ## Sales & collection data
-Enter in **Settings → Sales & collection**, paste rows from Excel
+Easiest: **Settings → Sales & collection → Download blank form**, fill one line per invoice or
+collection (rep and type are dropdowns), then **Upload filled form** → check the preview → **Import**.
+Rows already imported are skipped. You can also add single entries there, paste rows from Excel
 (`Date | Rep email or name | Sales/Collection | Amount | Customer | Ref`),
 or type straight into the `Sales` tab of the sheet.
 Targets carry forward to the next month until you change them.

@@ -248,7 +248,15 @@ en:{
   e_REP_REQUIRED:'Choose the representative', e_REP_UNKNOWN:'Unknown representative', e_NOT_YOUR_CLIENT:'This customer is not assigned to you',
   e_BAD_TYPE:'Choose Sales or Collection', e_BAD_AMOUNT:'Enter the amount', e_RANGE_TOO_LONG:'Please choose a shorter period', e_BAD_VALUE:'Check the values',
   e_SERVER:'Server error — try again', e_NETWORK:'No connection — check internet and try again',
-  details:'Details', refresh:'Refresh'
+  details:'Details', refresh:'Refresh',
+  importV:'Import visits', lastDay:'Last day', noTargets:'Set targets in Settings → Targets to see achievement %', noAreas:'Add an area to your customers (Customers page) to see this chart', fqTitle:'Import visits from FocusQuad Excel', fqHelp:'Choose the FocusQuad export (e.g. Month.xlsx or Daily.xlsx). Visits already in the app are skipped, so importing the same file twice is safe.',
+  chooseFile:'Choose Excel file', reading:'Reading the file…', fileHas:'File has', visitsFrom:'visits from', lastNDays:'Last {n} days', allFile:'Whole file',
+  willImport:'Will import', importNow:'Import', importing:'Importing…', added:'Added', duplicatesSkipped:'Already in the app (skipped)',
+  unknownReps:'Representatives not found in Users (skipped)', openVisits:'Open these visits', notFqFile:'This does not look like a FocusQuad visits file (no visit_date / created_by columns).',
+  salesForm:'Sales & collection Excel form', salesFormHelp:'1) Download the form. 2) Fill one line per invoice or collection — choose the rep and type from the lists. 3) Upload it here, check the preview, then press Import.',
+  downloadForm:'Download blank form', uploadForm:'Upload filled form', preview:'Preview', rowsOk:'Ready to import', rowsDup:'Already imported', rowsErr:'Need fixing',
+  st_ok:'OK', st_duplicate:'Already imported', st_error:'Fix', er_DATE:'Date', er_REP:'Representative not found', er_TYPE:'Type must be Sales or Collection', er_AMOUNT:'Amount',
+  line:'Line', importDone:'Imported', nothingToImport:'Nothing new to import', openSummary:'Open summary', libFail:'Could not load the Excel reader — check internet and try again'
 },
 ar:{
   appName:'الزيارات الميدانية', company:'مؤسسة المنارة المتحدة للتطوير الطبي',
@@ -300,7 +308,15 @@ ar:{
   e_REP_REQUIRED:'اختر المندوب', e_REP_UNKNOWN:'مندوب غير معروف', e_NOT_YOUR_CLIENT:'هذا العميل غير مسند إليك',
   e_BAD_TYPE:'اختر مبيعات أو تحصيل', e_BAD_AMOUNT:'أدخل المبلغ', e_RANGE_TOO_LONG:'اختر فترة أقصر', e_BAD_VALUE:'راجع القيم',
   e_SERVER:'خطأ في الخادم — حاول مرة أخرى', e_NETWORK:'لا يوجد اتصال — تحقق من الإنترنت وحاول مجددًا',
-  details:'التفاصيل', refresh:'تحديث'
+  details:'التفاصيل', refresh:'تحديث',
+  importV:'استيراد الزيارات', lastDay:'آخر يوم', noTargets:'حدد المستهدفات من الإعدادات ← المستهدفات لرؤية نسب التحقيق', noAreas:'أضف المنطقة للعملاء (صفحة العملاء) لرؤية هذا الرسم', fqTitle:'استيراد الزيارات من ملف إكسل فوكس كواد', fqHelp:'اختر ملف التصدير من فوكس كواد (مثل Month.xlsx أو Daily.xlsx). الزيارات الموجودة مسبقًا يتم تجاهلها، لذا يمكن استيراد نفس الملف مرتين بأمان.',
+  chooseFile:'اختر ملف إكسل', reading:'جارٍ قراءة الملف…', fileHas:'الملف يحتوي', visitsFrom:'زيارة من', lastNDays:'آخر {n} أيام', allFile:'الملف كاملًا',
+  willImport:'سيتم استيراد', importNow:'استيراد', importing:'جارٍ الاستيراد…', added:'تمت الإضافة', duplicatesSkipped:'موجودة مسبقًا (تم تجاهلها)',
+  unknownReps:'مندوبون غير موجودين في المستخدمين (تم تجاهلهم)', openVisits:'عرض هذه الزيارات', notFqFile:'هذا الملف لا يبدو ملف زيارات فوكس كواد (لا توجد أعمدة visit_date / created_by).',
+  salesForm:'نموذج إكسل للمبيعات والتحصيل', salesFormHelp:'1) حمّل النموذج. 2) املأ سطرًا لكل فاتورة أو تحصيل — اختر المندوب والنوع من القوائم. 3) ارفعه هنا وراجع المعاينة ثم اضغط استيراد.',
+  downloadForm:'تحميل نموذج فارغ', uploadForm:'رفع النموذج المعبأ', preview:'معاينة', rowsOk:'جاهزة للاستيراد', rowsDup:'مستوردة مسبقًا', rowsErr:'تحتاج تصحيح',
+  st_ok:'سليم', st_duplicate:'مستورد مسبقًا', st_error:'تصحيح', er_DATE:'التاريخ', er_REP:'المندوب غير موجود', er_TYPE:'النوع يجب أن يكون مبيعات أو تحصيل', er_AMOUNT:'المبلغ',
+  line:'السطر', importDone:'تم الاستيراد', nothingToImport:'لا يوجد جديد للاستيراد', openSummary:'عرض الملخص', libFail:'تعذر تحميل قارئ الإكسل — تحقق من الإنترنت وحاول مجددًا'
 }};
 
 /* ---------------- state ---------------- */
@@ -538,8 +554,8 @@ function baseOpts(extra){
 function deepMerge(a,b){ Object.keys(b).forEach(function(k){ if(b[k] && typeof b[k]==='object' && !Array.isArray(b[k]) && a[k] && typeof a[k]==='object') deepMerge(a[k],b[k]); else a[k]=b[k]; }); return a; }
 function mkChart(id, cfg){ if(!chartOK()) { var c=$('#'+id); if(c) c.parentNode.innerHTML='<div class="empty small">Charts need internet</div>'; return null; } var el=$('#'+id); if(!el) return null; var ch=new Chart(el, cfg); S.charts.push(ch); return ch; }
 function achChart(reps, pace){
-  var rs = reps.filter(function(r){ return r.salesTarget||r.collTarget||r.sales||r.coll; });
-  if(!rs.length){ var c=$('#c_ach'); if(c) c.parentNode.innerHTML='<div class="empty">'+t('noData')+'</div>'; return; }
+  var rs = reps.filter(function(r){ return r.salesTarget||r.collTarget; });
+  if(!rs.length){ var c=$('#c_ach'); if(c){ c.parentNode.style.height='auto'; c.parentNode.innerHTML='<div class="empty">'+t('noTargets')+'</div>'; } return; }
   $('#c_ach').parentNode.style.height = Math.max(260, rs.length*44+60)+'px';
   mkChart('c_ach',{ type:'bar', data:{ labels:rs.map(function(r){return r.name;}), datasets:[
     {label:t('sales')+' %', data:rs.map(function(r){return pct(r.sales,r.salesTarget)||0;}), backgroundColor:COL.gold, borderRadius:6, barPercentage:.8},
@@ -812,7 +828,7 @@ function hourChart(d){
 function areaChart(d){
   var m={}; d.visits.forEach(function(v){ var a=v.area||'—'; m[a]=(m[a]||0)+1; });
   var arr=Object.keys(m).map(function(k){return [k,m[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
-  if(!arr.length){ $('#c_area').parentNode.innerHTML='<div class="empty">'+t('noData')+'</div>'; return; }
+  if(!arr.length || (arr.length===1 && arr[0][0]==='—')){ $('#c_area').parentNode.innerHTML='<div class="empty">'+(arr.length?t('noAreas'):t('noData'))+'</div>'; return; }
   mkChart('c_area',{type:'bar', data:{labels:arr.map(function(x){return x[0];}), datasets:[{label:t('visitsN'), data:arr.map(function(x){return x[1];}), backgroundColor:[COL.gold,COL.sky,COL.blue,COL.orange,COL.navy,COL.green,COL.cyan,'#9b8cf5','#f59bb6','#7fd1ae'], borderRadius:5}]},
     options:baseOpts({indexAxis:'y', plugins:{legend:{display:false}}, scales:{y:{position:S.lang==='ar'?'right':'left'}}})});
 }
@@ -966,13 +982,13 @@ function submitVisit(){
 var ST = { tab:'' , tmonth:'', smonth:''};
 function pgSettings(){
   var mgr=S.me.role==='manager';
-  var tabs = mgr? ['users','targets','salesColl','system','myAccount'] : ['myAccount'];
+  var tabs = mgr? ['users','targets','salesColl','importV','system','myAccount'] : ['myAccount'];
   if(tabs.indexOf(ST.tab)<0) ST.tab=tabs[0];
   $('#view').innerHTML='<div class="ptitle"><h1>'+t('settings')+'</h1></div>'+
     (tabs.length>1?'<div class="subtabs">'+tabs.map(function(x){return '<button data-st="'+x+'" class="'+(ST.tab===x?'on':'')+'">'+t(x)+'</button>';}).join('')+'</div>':'')+
     '<div id="st_body"><div class="loading"><span class="spin"></span></div></div>';
   $$('[data-st]').forEach(function(b){ b.onclick=function(){ ST.tab=b.getAttribute('data-st'); pgSettings(); }; });
-  ({users:stUsers, targets:stTargets, salesColl:stSales, system:stSystem, myAccount:stAccount})[ST.tab]();
+  ({users:stUsers, targets:stTargets, salesColl:stSales, importV:stImport, system:stSystem, myAccount:stAccount})[ST.tab]();
 }
 function stUsers(){
   call('users').then(function(list){
@@ -1041,6 +1057,9 @@ function stSales(){
       '<div><label class="f">'+t('customer')+'</label><input id="sa_c" class="in-f"></div>'+
       '<div><label class="f">'+t('ref')+'</label><input id="sa_f" class="in-f" dir="ltr"></div>'+
      '</div><div class="flex" style="margin-top:12px"><span class="err-line" id="sa_m"></span><button class="btn gold right" id="sa_s">'+t('add')+'</button></div></div>'+
+     '<div class="card" style="margin-bottom:14px;border-top:4px solid var(--gold)"><h2>'+t('salesForm')+'</h2><div class="hint" style="margin-bottom:12px">'+t('salesFormHelp')+'</div>'+
+       '<div class="flex"><button class="btn ghost" id="sf_dl">⬇ '+t('downloadForm')+'</button>'+
+       '<label class="btn gold" style="margin:0">⬆ '+t('uploadForm')+'<input type="file" id="sf_up" accept=".xlsx" class="hide"></label><span id="sf_m" class="small"></span></div></div>'+
      '<div class="card" style="margin-bottom:14px"><h2>'+t('pasteImport')+'</h2><div class="hint" style="margin-bottom:10px">'+t('pasteHelp')+'</div>'+
        '<textarea id="sa_p" class="in-f" dir="ltr" style="min-height:110px;font-family:monospace" placeholder="2026-10-28\trep@email.com\tSales\t12500\tCustomer name\tINV-123"></textarea>'+
        '<div class="flex" style="margin-top:10px"><span id="sa_pm" class="small"></span><button class="btn blue right" id="sa_pi">'+t('importBtn')+'</button></div></div>'+
@@ -1050,6 +1069,8 @@ function stSales(){
       '</tbody></table></div>':'<div class="empty">'+t('noData')+'</div>')+'</div>';
     $('#st_body').innerHTML=h;
     $('#sa_mo').onchange=function(){ ST.smonth=this.value; stSales(); };
+    $('#sf_dl').onclick=function(){ downloadSalesForm(reps); };
+    $('#sf_up').onchange=function(){ var f=this.files[0]; this.value=''; if(f) uploadSalesForm(f); };
     $('#sa_s').onclick=function(){
       var e={date:$('#sa_d').value, rep:$('#sa_r').value, type:$('#sa_t').value, amount:$('#sa_a').value, client:$('#sa_c').value, ref:$('#sa_f').value};
       if(!e.rep){ $('#sa_m').textContent=t('e_REP_REQUIRED'); return; }
@@ -1095,6 +1116,226 @@ function stAccount(){
     if($('#ac_n').value!==$('#ac_c').value){ $('#ac_m').textContent=t('pwMismatch'); return; }
     call('changePassword',{oldPassword:$('#ac_o').value,newPassword:$('#ac_n').value}).then(function(){ toast(t('saved'),'good'); $('#ac_o').value=$('#ac_n').value=$('#ac_c').value=''; $('#ac_m').textContent=''; })
       .catch(function(e){ $('#ac_m').textContent=errText(e); });
+  };
+}
+
+/* ======================================================================
+   EXCEL: read & write in the browser (ExcelJS, loaded only when needed)
+   ====================================================================== */
+var _xl=null;
+function loadExcel(){
+  if(window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  if(_xl) return _xl;
+  _xl=new Promise(function(res,rej){
+    var sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+    sc.onload=function(){ window.ExcelJS?res(window.ExcelJS):rej(new Error('lib')); };
+    sc.onerror=function(){ _xl=null; rej(new Error('lib')); };
+    document.head.appendChild(sc);
+  });
+  return _xl;
+}
+function cellVal(v){
+  if(v===null||v===undefined) return '';
+  if(v instanceof Date) return v;
+  if(typeof v==='object'){
+    if(v.richText) return v.richText.map(function(x){return x.text;}).join('');
+    if(v.hyperlink!==undefined) return v.text&&typeof v.text==='object'&&v.text.richText? v.text.richText.map(function(x){return x.text;}).join(''): (v.text||v.hyperlink);
+    if(v.result!==undefined) return cellVal(v.result);
+    if(v.error) return '';
+    return String(v);
+  }
+  return v;
+}
+function ymd(v){
+  if(v instanceof Date) return v.getUTCFullYear()+'-'+p2(v.getUTCMonth()+1)+'-'+p2(v.getUTCDate());
+  if(typeof v==='number' && v>20000 && v<80000){ var d=new Date(Math.round((v-25569)*864e5)); return ymd(d); }
+  var s=String(v||'').trim().replace(/[\u0660-\u0669]/g,function(c){return c.charCodeAt(0)-0x660;}), m;
+  if((m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))) return m[1]+'-'+p2(+m[2])+'-'+p2(+m[3]);
+  if((m=s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/))) return m[3]+'-'+p2(+m[2])+'-'+p2(+m[1]);
+  return s;
+}
+function hm(v){
+  if(v instanceof Date) return p2(v.getUTCHours())+':'+p2(v.getUTCMinutes());
+  if(typeof v==='number' && v<1){ var mins=Math.round(v*1440); return p2(Math.floor(mins/60)%24)+':'+p2(mins%60); }
+  var s=String(v||'').trim(), m=s.match(/(\d{1,2}):(\d{2})\s*([AaPp]\.?[Mm]|ص|م)?/);
+  if(!m) return '';
+  var h=+m[1], ap=(m[3]||'').toLowerCase();
+  if((ap[0]==='p'||ap==='م') && h<12) h+=12;
+  if((ap[0]==='a'||ap==='ص') && h===12) h=0;
+  return p2(h)+':'+m[2];
+}
+function readBook(file){
+  return loadExcel().then(function(X){ return file.arrayBuffer().then(function(buf){ var wb=new X.Workbook(); return wb.xlsx.load(buf).then(function(){ return wb; }); }); });
+}
+function sheetRows(ws){
+  var out=[];
+  ws.eachRow({includeEmpty:false}, function(row, n){ var a=[]; row.eachCell({includeEmpty:true}, function(c, col){ a[col-1]=cellVal(c.value); }); out.push({n:n, v:a}); });
+  return out;
+}
+function saveBlob(blob, name){
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ---------------- Settings → Import visits (FocusQuad) ---------------- */
+var FQ = { rows:null, name:'', range:'2' };
+function stImport(){
+  var h='<div class="card" style="max-width:820px"><h2>'+t('fqTitle')+'</h2><div class="hint" style="margin-bottom:12px">'+t('fqHelp')+'</div>'+
+    '<label class="btn gold" style="margin:0">⬆ '+t('chooseFile')+'<input type="file" id="fq_f" accept=".xlsx" class="hide"></label>'+
+    '<div id="fq_b" style="margin-top:14px"></div></div>';
+  $('#st_body').innerHTML=h;
+  $('#fq_f').onchange=function(){ var f=this.files[0]; this.value=''; if(f) readFq(f); };
+  if(FQ.rows) fqPanel();
+}
+function readFq(file){
+  $('#fq_b').innerHTML='<div class="loc"><span class="spin"></span><span>'+t('reading')+'</span></div>';
+  readBook(file).then(function(wb){
+    var rows=null;
+    wb.worksheets.forEach(function(ws){
+      if(rows) return;
+      var all=sheetRows(ws); if(!all.length) return;
+      var head=(all[0].v||[]).map(function(x){ return String(x||'').trim().toLowerCase(); });
+      var ix=function(){ for(var i=0;i<arguments.length;i++){ var k=head.indexOf(arguments[i]); if(k>=0) return k; } return -1; };
+      var c={ date:ix('visit_date'), by:ix('created_by'), name:ix('rep_name'), id:ix('id'), time:ix('completed_time'), client:ix('client_name'),
+        code:ix('client_code'), type:ix('visit_type'), comment:ix('comment'), check:ix('location_check'), dist:ix('distance_m'),
+        raw:ix('aa_actual_raw'), act:ix('actual_location') };
+      if(c.date<0 || (c.by<0 && c.name<0)) return;
+      rows=[];
+      all.slice(1).forEach(function(r){
+        var v=r.v, g=function(k){ return k<0?'':v[k]; };
+        var d=ymd(g(c.date)); if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+        var url=String(g(c.raw)||'')+' '+String(typeof g(c.act)==='string'?g(c.act):'');
+        var m=url.match(/[?&]q=(-?\d+\.\d+),\s*(-?\d+\.\d+)/)||url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        var chk=String(g(c.check)||'').toUpperCase(), tags=[];
+        if(chk==='FAKE') tags.push('FAR'); if(chk==='NO_EXPECTED_LOC') tags.push('NO_CLIENT_LOC');
+        var code=g(c.code); if(typeof code==='number') code=String(code);
+        rows.push({ id:String(g(c.id)||(d+'-'+r.n)), date:d, time:hm(g(c.time)), rep:String(g(c.by)||'').trim(), repName:String(g(c.name)||'').trim(),
+          code:String(code||'').trim(), client:String(g(c.client)||'').trim(), type:String(g(c.type)||'').trim(), comment:String(g(c.comment)||'').trim(),
+          lat:m?+m[1]:null, lon:m?+m[2]:null, dist:typeof g(c.dist)==='number'?g(c.dist):null, flag:chk==='FAKE', tags:tags.join(' ') });
+      });
+    });
+    if(!rows){ $('#fq_b').innerHTML='<div class="alert"><b>'+t('notFqFile')+'</b></div>'; return; }
+    FQ.rows=rows; FQ.name=file.name; FQ.range='2'; fqPanel();
+  }).catch(function(e){ $('#fq_b').innerHTML='<div class="alert"><b>'+(e&&e.message==='lib'?t('libFail'):esc(String(e&&e.message||e)))+'</b></div>'; });
+}
+function fqPick(){
+  var days=uniq(FQ.rows.map(function(r){return r.date;})).sort();
+  var sel=FQ.range==='all'? FQ.rows : (function(){ var keep=days.slice(-(+FQ.range)); return FQ.rows.filter(function(r){ return keep.indexOf(r.date)>=0; }); })();
+  return { days:days, sel:sel };
+}
+function fqPanel(){
+  var p=fqPick(), d=p.days, sel=p.sel, sd=uniq(sel.map(function(r){return r.date;})).sort();
+  var fake=sel.filter(function(r){return r.flag;}).length;
+  $('#fq_b').innerHTML=
+    '<div class="hint" style="margin-bottom:12px"><b>'+esc(FQ.name)+'</b> — '+t('fileHas')+' <b>'+fmt(FQ.rows.length)+'</b> '+t('visitsFrom')+' '+dLabel(d[0],true)+' → '+dLabel(d[d.length-1],true)+'</div>'+
+    '<div class="seg" id="fq_r">'+[['1',t('lastDay')],['2',t('lastNDays').replace('{n}','2')],['7',t('lastNDays').replace('{n}','7')],['all',t('allFile')]].map(function(o){ return '<button data-r="'+o[0]+'" class="'+(FQ.range===o[0]?'on':'')+'">'+o[1]+'</button>'; }).join('')+'</div>'+
+    '<div class="kpis" style="margin-top:14px">'+statCard('navy',t('willImport'),fmt(sel.length), sd.length? dLabel(sd[0])+(sd.length>1?' → '+dLabel(sd[sd.length-1]):''):'')+
+      statCard('',t('activeReps'),fmt(uniq(sel.map(function(r){return r.rep||r.repName;})).length),'')+statCard('red',t('fakeVisits'),fmt(fake), sel.length?Math.round(fake/sel.length*100)+'%':'')+'</div>'+
+    '<button class="btn gold" id="fq_go">'+t('importNow')+'</button><div id="fq_res" style="margin-top:14px"></div>';
+  $$('#fq_r button').forEach(function(b){ b.onclick=function(){ FQ.range=b.getAttribute('data-r'); fqPanel(); }; });
+  $('#fq_go').onclick=function(){ fqImport(sel); };
+}
+function fqImport(sel){
+  var btn=$('#fq_go'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> '+t('importing');
+  var chunks=[], i; for(i=0;i<sel.length;i+=1000) chunks.push(sel.slice(i,i+1000));
+  var tot={added:0,duplicates:0,unknownReps:{},from:'',to:''}, k=0;
+  var next=function(){
+    if(k>=chunks.length) return done();
+    btn.innerHTML='<span class="spin"></span> '+t('importing')+' '+Math.round(k/chunks.length*100)+'%';
+    call('importVisits',{rows:chunks[k++]}).then(function(r){
+      tot.added+=r.added; tot.duplicates+=r.duplicates; r.unknownReps.forEach(function(x){ tot.unknownReps[x]=1; });
+      if(r.from && (!tot.from||r.from<tot.from)) tot.from=r.from; if(r.to && r.to>tot.to) tot.to=r.to;
+      next();
+    }).catch(function(e){ btn.disabled=false; btn.textContent=t('importNow'); toast(errText(e),'bad'); });
+  };
+  var done=function(){
+    btn.disabled=false; btn.textContent=t('importNow');
+    var dd=uniq(sel.map(function(r){return r.date;})).sort(), unk=Object.keys(tot.unknownReps);
+    $('#fq_res').innerHTML='<div class="card" style="background:#effbf5;border-color:#9ee0c1;box-shadow:none">'+
+      '<div class="flex"><b class="ok" style="font-size:17px">✓ '+t('added')+': '+fmt(tot.added)+'</b><span class="mut">'+t('duplicatesSkipped')+': '+fmt(tot.duplicates)+'</span>'+
+      '<button class="btn gold right" id="fq_open">'+t('openVisits')+'</button></div>'+
+      (unk.length?'<div class="alert" style="margin:12px 0 0"><b>'+t('unknownReps')+'</b>'+esc(unk.join('، '))+'</div>':'')+'</div>';
+    $('#fq_open').onclick=function(){ VF.preset='custom'; VF.from=dd[0]; VF.to=dd[dd.length-1]; VF.rep=''; S.month=dd[dd.length-1].slice(0,7); S.day=dd[dd.length-1]; go('visits'); };
+    toast(t('added')+': '+fmt(tot.added),'good');
+  };
+  next();
+}
+
+/* ---------------- Sales & collection Excel form ---------------- */
+var SF_HEAD=['Date / التاريخ','Representative / المندوب','Type / النوع','Amount / المبلغ','Customer / العميل','Invoice-Ref / المرجع'];
+function downloadSalesForm(reps){
+  $('#sf_m').innerHTML='<span class="spin"></span>';
+  loadExcel().then(function(X){
+    var wb=new X.Workbook(); wb.creator='Field Visits';
+    var ws=wb.addWorksheet('Form',{views:[{state:'frozen',ySplit:1}]});
+    var ls=wb.addWorksheet('Lists');
+    ls.addRow(['Representative / المندوب','Email','','Type / النوع']);
+    var types=['Sales','Collection','مبيعات','تحصيل'];
+    var n=Math.max(reps.length,types.length);
+    for(var i=0;i<n;i++) ls.addRow([reps[i]?reps[i].name:null, reps[i]?reps[i].email:null, null, types[i]||null]);
+    ls.getRow(1).font={bold:true}; ls.columns=[{width:30},{width:34},{width:4},{width:18}];
+    ws.columns=[{width:14},{width:30},{width:16},{width:16},{width:36},{width:20}];
+    var hr=ws.addRow(SF_HEAD); hr.height=24;
+    hr.eachCell(function(c){ c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF16365C'}}; c.alignment={vertical:'middle',horizontal:'center'}; c.border={bottom:{style:'medium',color:{argb:'FFE8A317'}}}; });
+    for(var r=2;r<=501;r++){
+      ws.getCell('A'+r).numFmt='yyyy-mm-dd';
+      ws.getCell('A'+r).dataValidation={type:'date',operator:'greaterThan',allowBlank:true,formulae:[new Date(Date.UTC(2020,0,1))],showErrorMessage:true,errorTitle:'Date',error:'Enter a date, e.g. 2026-10-29'};
+      ws.getCell('B'+r).dataValidation={type:'list',allowBlank:true,formulae:['Lists!$A$2:$A$'+(reps.length+1)],showErrorMessage:true,errorTitle:'Representative',error:'Choose a representative from the list'};
+      ws.getCell('C'+r).dataValidation={type:'list',allowBlank:true,formulae:['Lists!$D$2:$D$5'],showErrorMessage:true,errorTitle:'Type',error:'Sales / Collection'};
+      ws.getCell('D'+r).numFmt='#,##0.00';
+      ws.getCell('D'+r).dataValidation={type:'decimal',operator:'greaterThan',allowBlank:true,formulae:[0],showErrorMessage:true,errorTitle:'Amount',error:'Enter a number greater than 0'};
+    }
+    return wb.xlsx.writeBuffer();
+  }).then(function(buf){
+    $('#sf_m').textContent='';
+    saveBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Sales_Collection_Form.xlsx');
+  }).catch(function(e){ $('#sf_m').textContent=e&&e.message==='lib'?t('libFail'):String(e&&e.message||e); });
+}
+function uploadSalesForm(file){
+  $('#sf_m').innerHTML='<span class="spin"></span> '+t('reading');
+  readBook(file).then(function(wb){
+    var ws=wb.getWorksheet('Form')||wb.worksheets[0];
+    var all=sheetRows(ws), hi=-1, map=null;
+    var keys={date:/date|تاريخ/i, rep:/rep|مندوب/i, type:/type|نوع/i, amount:/amount|مبلغ|قيمة/i, client:/customer|client|عميل/i, ref:/ref|invoice|مرجع|فاتورة/i};
+    for(var i=0;i<Math.min(all.length,10);i++){
+      var h=all[i].v.map(function(x){return String(x||'');}), m={}, hits=0;
+      Object.keys(keys).forEach(function(k){ var j=-1; h.forEach(function(x,ix){ if(j<0 && keys[k].test(x)) j=ix; }); m[k]=j; if(j>=0) hits++; });
+      if(hits>=3){ hi=i; map=m; break; }
+    }
+    if(!map){ map={date:0,rep:1,type:2,amount:3,client:4,ref:5}; hi=-1; }
+    var rows=[];
+    all.slice(hi+1).forEach(function(r){
+      var g=function(k){ return map[k]<0?'':r.v[map[k]]; };
+      if(!String(g('date')||'').trim() && !String(g('rep')||'').trim() && !String(g('amount')||'').trim()) return;
+      rows.push({line:r.n, date:ymd(g('date')), rep:String(g('rep')||'').trim(), type:String(g('type')||'').trim(),
+        amount:g('amount')===''?'':String(g('amount')), client:String(g('client')||'').trim(), ref:String(g('ref')||'').trim()});
+    });
+    $('#sf_m').textContent='';
+    if(!rows.length){ toast(t('nothingToImport')); return; }
+    return call('importSalesRows',{rows:rows, dryRun:true}).then(function(pv){ salesPreview(rows, pv); });
+  }).catch(function(e){ $('#sf_m').textContent=e&&e.message==='lib'?t('libFail'):errText(e); });
+}
+function salesPreview(rows, pv){
+  var ok=pv.rows.filter(function(r){return r.status==='ok';}).length;
+  var b='<div class="kpis" style="margin-bottom:12px">'+statCard('green',t('rowsOk'),fmt(ok), t('sales')+': '+money(pv.totals.sales)+' · '+t('collection')+': '+money(pv.totals.collection))+
+    statCard('',t('rowsDup'),fmt(pv.duplicates),'')+statCard('red',t('rowsErr'),fmt(pv.errors),'')+'</div>'+
+    '<div class="tw" style="max-height:55vh"><table class="t"><thead><tr><th>'+t('line')+'</th><th></th><th>'+t('date')+'</th><th>'+t('rep')+'</th><th>'+t('type')+'</th><th class="n">'+t('amount')+'</th><th>'+t('customer')+'</th><th>'+t('ref')+'</th></tr></thead><tbody>'+
+    pv.rows.map(function(r){
+      var pill=r.status==='ok'?'good':r.status==='duplicate'?'grey':'bad';
+      return '<tr'+(r.status==='error'?' style="background:#fff7f7"':'')+'><td class="mut">'+r.line+'</td><td><span class="pill '+pill+'">'+t('st_'+r.status)+'</span>'+
+        (r.errors.length?'<div class="small" style="color:var(--red);font-weight:700">'+r.errors.map(function(x){return t('er_'+x);}).join(' · ')+'</div>':'')+'</td>'+
+        '<td>'+esc(r.date)+'</td><td>'+esc(r.repName||'')+'</td><td>'+(r.type?t(r.type):'')+'</td><td class="n"><b>'+(r.amount==null?'':money(r.amount))+'</b></td><td class="wrap">'+esc(r.client)+'</td><td>'+esc(r.ref)+'</td></tr>';
+    }).join('')+'</tbody></table></div>';
+  var foot='<button class="btn ghost" onclick="closeModal()">'+t('cancel')+'</button><button class="btn gold" id="sp_go"'+(pv.toAdd?'':' disabled')+'>'+t('importNow')+' ('+pv.toAdd+')</button>';
+  modal(t('preview'), b, foot);
+  $('#sp_go').onclick=function(){
+    this.disabled=true; this.innerHTML='<span class="spin"></span>';
+    call('importSalesRows',{rows:rows}).then(function(r){
+      closeModal(); toast(t('importDone')+': '+r.toAdd,'good');
+      var ms=uniq(r.rows.filter(function(x){return x.status==='ok';}).map(function(x){return x.date.slice(0,7);})).sort();
+      if(ms.length){ ST.smonth=ms[ms.length-1]; S.month=ms[ms.length-1]; }
+      stSales();
+    }).catch(function(e){ toast(errText(e),'bad'); $('#sp_go').disabled=false; $('#sp_go').textContent=t('importNow'); });
   };
 }
 

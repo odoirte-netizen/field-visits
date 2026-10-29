@@ -102,7 +102,9 @@ var ACTIONS = {
   deleteSale:      { manager: true, run: function (me, r) { return _deleteSale(r.id); } },
   importSales:     { manager: true, run: function (me, r) { return _importSales(me, r.text); } },
   settings:        { manager: true, run: function () { return _settings(); } },
-  saveSettings:    { manager: true, run: function (me, r) { return _saveSettings(r.settings); } }
+  saveSettings:    { manager: true, run: function (me, r) { return _saveSettings(r.settings); } },
+  importVisits:    { manager: true, run: function (me, r) { return _importVisits(r.rows); } },
+  importSalesRows: { manager: true, run: function (me, r) { return _importSalesRows(me, r.rows, r.dryRun); } }
 };
 
 /** Run once by hand if you like (it also runs automatically). */
@@ -152,6 +154,14 @@ function _append(name, obj) {
   sh.appendRow(arr);
   _clear(name);
 }
+/** Many rows in one write (fast; used by imports). */
+function _appendMany(name, objs) {
+  if (!objs.length) return;
+  var head = _head(name), sh = _sheet(name);
+  var data = objs.map(function (o) { return head.map(function (h) { return o.hasOwnProperty(h) ? o[h] : ''; }); });
+  sh.getRange(sh.getLastRow() + 1, 1, data.length, head.length).setValues(data);
+  _clear(name);
+}
 function _update(name, row, obj) {
   var head = _head(name), sh = _sheet(name);
   var cur = sh.getRange(row, 1, 1, head.length).getValues()[0];
@@ -169,8 +179,34 @@ function _str(v) { return v === null || v === undefined ? '' : String(v).trim();
 function _low(v) { return _str(v).toLowerCase(); }
 function _num(v) {
   if (v === '' || v === null || v === undefined) return null;
-  var n = Number(String(v).replace(/[, ]/g, ''));
+  var n = Number(_digits(v).replace(/[,\s\u066C]/g, '').replace('\u066B', '.'));
   return isNaN(n) ? null : n;
+}
+/** Arabic-Indic digits → 0-9 */
+function _digits(v) {
+  return String(v).replace(/[\u0660-\u0669]/g, function (d) { return String(d.charCodeAt(0) - 0x660); })
+    .replace(/[\u06F0-\u06F9]/g, function (d) { return String(d.charCodeAt(0) - 0x6F0); });
+}
+/** Loose name match (Arabic spelling variants, spaces, case). */
+function _nname(s) {
+  return _low(s).replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
+}
+/** Find a user from an email, a login without "@", or a name. */
+function _repMatcher() {
+  var byEmail = {}, byPrefix = {}, byName = {};
+  _rows(SH.users).forEach(function (u) {
+    var e = _low(u.email); byEmail[e] = e; byPrefix[e.split('@')[0]] = e;
+    if (_str(u.name)) byName[_nname(u.name)] = e;
+  });
+  return function (x) {
+    var v = _low(x); if (!v) return '';
+    if (byEmail[v]) return byEmail[v];
+    var pre = v.split('@')[0];
+    if (pre === 'e.elhassani') pre = 'e.alhassani';
+    if (byPrefix[pre]) return byPrefix[pre];
+    return byName[_nname(x)] || '';
+  };
 }
 function _bool(v) {
   if (v === true || v === 1) return true;
@@ -884,4 +920,83 @@ function _details(me, r) {
   else { from = month + '-01'; to = _monthEnd(month); }
   var res = _visits(me, { from: from, to: to, rep: rep });
   return { kind: kind, rows: res.visits.filter(function (v) { return !onlyFake || v.flag; }) };
+}
+
+/* ================================================================
+ *  Imports (Settings → Import, Sales form upload)
+ * ================================================================ */
+/** Visits from a FocusQuad Excel export, already read by the page.
+ *  Each row: {id,date,time,rep,repName,code,client,type,lat,lon,dist,flag,tags,comment}
+ *  Skips rows already in the sheet (same id, or same rep+customer+date+time). */
+function _importVisits(rows) {
+  rows = rows || [];
+  if (rows.length > 3000) throw _err('BAD_VALUE', 'max 3000 rows per call');
+  var match = _repMatcher(), names = _repNames(), cm = _clientMap();
+  return _lock(function () {
+    var seen = {};
+    _rows(SH.visits).forEach(function (v) {
+      seen['i' + _str(v.id)] = 1;
+      seen['k' + _low(v.rep_email) + '|' + _str(v.client_code) + '|' + (_ds(v.date) || _dsTz(v.ts)) + '|' + (_ts(v.time) || _tsTz(v.ts))] = 1;
+    });
+    var out = [], dup = 0, noRep = {}, bad = 0;
+    rows.forEach(function (r) {
+      var id = 'FQ' + _str(r.id).replace(/^FQ/, ''), d = _ds(r.date), tm = _ts(r.time);
+      var rep = match(r.rep) || match(r.repName);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) { bad++; return; }
+      if (!rep) { noRep[_str(r.repName) || _str(r.rep)] = 1; return; }
+      var code = _str(r.code).replace(/\.0$/, '');
+      var key = 'k' + rep + '|' + code + '|' + d + '|' + tm;
+      if (seen['i' + id] || seen[key]) { dup++; return; }
+      seen['i' + id] = seen[key] = 1;
+      var lat = _num(r.lat), lon = _num(r.lon), c = cm[code];
+      out.push({ id: id, ts: '', date: "'" + d, time: "'" + tm, rep_email: rep, rep_name: names[rep] || _str(r.repName),
+        client_code: code, client_name: _str(r.client) || (c ? _str(c.name) : ''), visit_type: _str(r.type),
+        lat: lat === null ? '' : lat, lon: lon === null ? '' : lon, accuracy: '', altitude: '', mock: false,
+        distance_m: _num(r.dist) === null ? '' : Math.round(_num(r.dist)), flag: !!r.flag, tags: _str(r.tags),
+        comment: _str(r.comment).slice(0, 500), person_name: '', person_mobile: '', source: 'focusquad' });
+    });
+    _appendMany(SH.visits, out);
+    var ds = out.map(function (o) { return o.date.slice(1); }).sort();
+    return { added: out.length, duplicates: dup, badDate: bad, unknownReps: Object.keys(noRep),
+      from: ds[0] || '', to: ds[ds.length - 1] || '' };
+  });
+}
+
+/** Sales / collection rows from the Excel form. dryRun = preview only.
+ *  Each row: {line,date,rep,type,amount,client,ref} */
+function _importSalesRows(me, rows, dryRun) {
+  rows = rows || [];
+  var match = _repMatcher(), names = _repNames();
+  var have = {};
+  var key = function (d, rep, type, amt, client, ref) {
+    return [d, rep, type, Math.round(amt * 100), _nname(client), _low(ref)].join('|');
+  };
+  _rows(SH.sales).forEach(function (s) {
+    have[key(_ds(s.date), _low(s.rep_email), _saleType(s.type) || 'sales', _num(s.amount) || 0, s.client, s.ref)] = 1;
+  });
+  var check = [], add = [], tot = { sales: 0, collection: 0 };
+  rows.forEach(function (r, i) {
+    var d = _ds(_digits(r.date)), rep = match(r.rep), type = _saleType(r.type), amt = _num(r.amount);
+    var errs = [];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) errs.push('DATE');
+    if (!rep) errs.push('REP');
+    if (!type) errs.push('TYPE');
+    if (amt === null || amt === 0) errs.push('AMOUNT');
+    var row = { line: r.line || i + 2, date: d, rep: rep, repName: rep ? names[rep] : _str(r.rep), type: type,
+      amount: amt, client: _str(r.client), ref: _str(r.ref), errors: errs, status: errs.length ? 'error' : 'ok' };
+    if (!errs.length) {
+      var k = key(d, rep, type, amt, row.client, row.ref);
+      if (have[k]) row.status = 'duplicate';
+      else {
+        have[k] = 1; tot[type] += amt;
+        add.push({ id: 'S' + Date.now() + '' + i, date: "'" + d, rep_email: rep, type: type, amount: amt,
+          client: row.client, ref: row.ref, note: 'form', added_by: me.email, added_at: new Date() });
+      }
+    }
+    check.push(row);
+  });
+  if (!dryRun) _lock(function () { _appendMany(SH.sales, add); });
+  return { rows: check, toAdd: add.length, totals: tot, saved: !dryRun,
+    errors: check.filter(function (r) { return r.status === 'error'; }).length,
+    duplicates: check.filter(function (r) { return r.status === 'duplicate'; }).length };
 }
