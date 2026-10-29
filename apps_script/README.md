@@ -20,7 +20,7 @@ These two files are the whole app. The Android APK just opens your `/exec` link,
 ## Pages
 
 **Manager**
-- **Summary** — each rep's sales vs target, collection vs target, visits month-to-date, visits of the chosen day (default yesterday), fake visits. Every number opens its details.
+- **Summary** — top cards: sales and collection vs target, visits, fake visits. Rep table: sales, collection, visits and fake visits of the chosen day (default yesterday), customers. Chart: sales and collection amounts by rep. Every number opens its details.
 - **Customers** — add / edit / delete; name, Google Maps link, assigned rep, area. The location is read from the map link automatically.
 - **Visits** — month-to-date totals, average daily visits, coverage, fake %, daily trend, rep trend vs team average, visits by rep / hour / area, full visit list.
 - **Settings** — users & access (add, disable, reset password to `000000`), monthly targets, sales & collection entries (form or paste from Excel), system options.

@@ -206,7 +206,7 @@ en:{
   sales:'Sales', collection:'Collection', target:'Target', ach:'Achieved', ofTarget:'of target', pace:'Expected by today',
   visitsMTD:'Visits (month to date)', visitsDayL:'Visits on', fakeDayL:'Fake visits on', fakeMTD:'Fake visits (month)',
   byRep:'By representative', total:'Total', clientsN:'Customers', noData:'No data yet', loading:'Loading…',
-  workDays:'working days', daysLeft:'working days left', salesAch:'Sales & collection achievement %',
+  workDays:'working days', daysLeft:'working days left', salesAch:'Sales & collection by representative',
   // customers
   addCustomer:'Add customer', editCustomer:'Edit customer', name:'Name', mapLink:'Google Maps link', assignedTo:'Assigned representative',
   search:'Search…', openMap:'Map', hasLoc:'Location set', noLoc:'No location yet', lastVisit:'Last visit', never:'Never',
@@ -269,7 +269,7 @@ ar:{
   sales:'المبيعات', collection:'التحصيل', target:'المستهدف', ach:'المحقق', ofTarget:'من المستهدف', pace:'المتوقع حتى اليوم',
   visitsMTD:'الزيارات (من بداية الشهر)', visitsDayL:'زيارات يوم', fakeDayL:'زيارات وهمية يوم', fakeMTD:'زيارات وهمية (الشهر)',
   byRep:'حسب المندوب', total:'الإجمالي', clientsN:'العملاء', noData:'لا توجد بيانات بعد', loading:'جارٍ التحميل…',
-  workDays:'أيام عمل', daysLeft:'أيام عمل متبقية', salesAch:'نسبة تحقيق المبيعات والتحصيل %',
+  workDays:'أيام عمل', daysLeft:'أيام عمل متبقية', salesAch:'المبيعات والتحصيل حسب المندوب',
   addCustomer:'إضافة عميل', editCustomer:'تعديل العميل', name:'الاسم', mapLink:'رابط خرائط جوجل', assignedTo:'المندوب المسؤول',
   search:'بحث…', openMap:'الخريطة', hasLoc:'الموقع محدد', noLoc:'لا يوجد موقع بعد', lastVisit:'آخر زيارة', never:'لم يُزر',
   locFound:'تم قراءة الموقع من الرابط', locNotFound:'تم الحفظ. لم نتمكن من قراءة الموقع من الرابط — سيُحدد من أول زيارة سليمة.',
@@ -500,14 +500,14 @@ function pgSummaryMgr(){
       kpi('','visitsDay','', t('visitsDayL')+' '+dLabel(d.day), fmt(T0.visitsDay), dLabel(d.day,true))+
       kpi('red','fakeDay','', t('fakeDayL')+' '+dLabel(d.day), fmt(T0.fakeDay), t('fakeMTD')+': '+fmt(T0.fakeMTD))+
     '</div>'+
-    '<div class="card" style="margin-bottom:16px"><div class="flex"><h2 style="margin:0">'+t('byRep')+'</h2><span class="right small mut">'+t('pace')+': <b>'+(pace===null?'—':pace+'%')+'</b> · '+t('day')+': '+dLabel(d.day,true)+'</span></div><div style="height:10px"></div>'+
+    '<div class="card" style="margin-bottom:16px"><div class="flex"><h2 style="margin:0">'+t('byRep')+'</h2><span class="right small mut">'+t('day')+': '+dLabel(d.day,true)+'</span></div><div style="height:10px"></div>'+
       repTable(d, pace)+'</div>'+
     '<div class="card"><h2>'+t('salesAch')+'</h2><div class="chart tall"><canvas id="c_ach"></canvas></div></div>';
     $('#view').innerHTML = html;
     $('#s_m').onchange=function(){ S.month=this.value; go('summary'); };
     $('#s_d').onchange=function(){ if(this.value){ S.day=this.value; go('summary'); } };
     $$('[data-d]').forEach(function(b){ b.onclick=function(){ openDetails(b.getAttribute('data-d'), b.getAttribute('data-rep')||'', b.getAttribute('data-title')||''); }; });
-    achChart(d.reps, pace);
+    achChart(d.reps);
   }).catch(fail);
 }
 function kpi(color, kind, rep, label, value, sub, p, pace){
@@ -519,27 +519,22 @@ function repTable(d, pace){
   if(!d.reps.length) return '<div class="empty">'+t('noData')+'</div>';
   var dl=dLabel(d.day);
   var h='<div class="tw"><table class="t"><thead><tr><th class="sticky">'+t('rep')+'</th>'+
-   '<th class="n">'+t('sales')+'</th><th class="n">'+t('target')+'</th><th>'+t('ach')+'</th>'+
-   '<th class="n">'+t('collection')+'</th><th class="n">'+t('target')+'</th><th>'+t('ach')+'</th>'+
-   '<th class="n">'+t('visitsMTD')+'</th><th class="n">'+t('visitsDayL')+' '+dl+'</th><th class="n">'+t('fakeDayL')+' '+dl+'</th><th class="n">'+t('fakeMTD')+'</th><th class="n">'+t('clientsN')+'</th></tr></thead><tbody>';
+   '<th class="n">'+t('sales')+'</th><th class="n">'+t('collection')+'</th>'+
+   '<th class="n">'+t('visitsDayL')+' '+dl+'</th><th class="n">'+t('fakeDayL')+' '+dl+'</th><th class="n">'+t('clientsN')+'</th></tr></thead><tbody>';
   d.reps.forEach(function(r){
-    var sp=pct(r.sales,r.salesTarget), cp=pct(r.coll,r.collTarget), n=r.name;
+    var n=r.name;
     h+='<tr><td class="sticky"><b>'+esc(r.name)+'</b>'+(r.active?'':' <span class="pill grey">'+t('disabled')+'</span>')+'</td>'+
-      '<td class="n">'+nb('sales',r.email,money(r.sales),t('sales')+' — '+n)+'</td><td class="n mut">'+money(r.salesTarget)+'</td>'+
-      '<td><span class="minibar">'+bar(sp,pace)+'</span> '+pctPill(sp,pace)+'</td>'+
-      '<td class="n">'+nb('collection',r.email,money(r.coll),t('collection')+' — '+n)+'</td><td class="n mut">'+money(r.collTarget)+'</td>'+
-      '<td><span class="minibar">'+bar(cp,pace)+'</span> '+pctPill(cp,pace)+'</td>'+
-      '<td class="n">'+nb('visitsMTD',r.email,r.visitsMTD,t('visitsMTD')+' — '+n)+'</td>'+
+      '<td class="n">'+nb('sales',r.email,money(r.sales),t('sales')+' — '+n)+'</td>'+
+      '<td class="n">'+nb('collection',r.email,money(r.coll),t('collection')+' — '+n)+'</td>'+
       '<td class="n">'+nb('visitsDay',r.email,r.visitsDay,t('visitsDayL')+' '+dl+' — '+n)+'</td>'+
       '<td class="n">'+nb('fakeDay',r.email,r.fakeDay,t('fakeDayL')+' '+dl+' — '+n,true)+'</td>'+
-      '<td class="n">'+nb('fakeMTD',r.email,r.fakeMTD,t('fakeMTD')+' — '+n,true)+'</td>'+
       '<td class="n">'+nb('clients',r.email,r.clients,t('clientsN')+' — '+n)+'</td></tr>';
   });
-  var T0=d.total, sp=pct(T0.sales,T0.salesTarget), cp=pct(T0.coll,T0.collTarget);
-  h+='<tr class="tot"><td class="sticky">'+t('total')+'</td><td class="n">'+nb('sales','',money(T0.sales),t('sales'))+'</td><td class="n">'+money(T0.salesTarget)+'</td><td>'+pctPill(sp,pace)+'</td>'+
-    '<td class="n">'+nb('collection','',money(T0.coll),t('collection'))+'</td><td class="n">'+money(T0.collTarget)+'</td><td>'+pctPill(cp,pace)+'</td>'+
-    '<td class="n">'+nb('visitsMTD','',T0.visitsMTD,t('visitsMTD'))+'</td><td class="n">'+nb('visitsDay','',T0.visitsDay,t('visitsDayL')+' '+dl)+'</td>'+
-    '<td class="n">'+nb('fakeDay','',T0.fakeDay,t('fakeDayL')+' '+dl,true)+'</td><td class="n">'+nb('fakeMTD','',T0.fakeMTD,t('fakeMTD'),true)+'</td><td class="n">'+fmt(T0.clients)+'</td></tr>';
+  var T0=d.total;
+  h+='<tr class="tot"><td class="sticky">'+t('total')+'</td><td class="n">'+nb('sales','',money(T0.sales),t('sales'))+'</td>'+
+    '<td class="n">'+nb('collection','',money(T0.coll),t('collection'))+'</td>'+
+    '<td class="n">'+nb('visitsDay','',T0.visitsDay,t('visitsDayL')+' '+dl)+'</td>'+
+    '<td class="n">'+nb('fakeDay','',T0.fakeDay,t('fakeDayL')+' '+dl,true)+'</td><td class="n">'+fmt(T0.clients)+'</td></tr>';
   return h+'</tbody></table></div>';
 }
 var COL = {navy:'#16365c', blue:'#1a6fae', sky:'#1ba9cf', cyan:'#8ee6fb', gold:'#e8a317', orange:'#f37a1f', green:'#16a065', red:'#e0393e', grey:'#c7d3df'};
@@ -553,15 +548,15 @@ function baseOpts(extra){
 }
 function deepMerge(a,b){ Object.keys(b).forEach(function(k){ if(b[k] && typeof b[k]==='object' && !Array.isArray(b[k]) && a[k] && typeof a[k]==='object') deepMerge(a[k],b[k]); else a[k]=b[k]; }); return a; }
 function mkChart(id, cfg){ if(!chartOK()) { var c=$('#'+id); if(c) c.parentNode.innerHTML='<div class="empty small">Charts need internet</div>'; return null; } var el=$('#'+id); if(!el) return null; var ch=new Chart(el, cfg); S.charts.push(ch); return ch; }
-function achChart(reps, pace){
-  var rs = reps.filter(function(r){ return r.salesTarget||r.collTarget; });
-  if(!rs.length){ var c=$('#c_ach'); if(c){ c.parentNode.style.height='auto'; c.parentNode.innerHTML='<div class="empty">'+t('noTargets')+'</div>'; } return; }
+function achChart(reps){
+  var rs = reps.filter(function(r){ return r.sales||r.coll; }).sort(function(a,b){ return (b.sales+b.coll)-(a.sales+a.coll); });
+  if(!rs.length){ var c=$('#c_ach'); if(c){ c.parentNode.style.height='auto'; c.parentNode.innerHTML='<div class="empty">'+t('noData')+'</div>'; } return; }
   $('#c_ach').parentNode.style.height = Math.max(260, rs.length*44+60)+'px';
   mkChart('c_ach',{ type:'bar', data:{ labels:rs.map(function(r){return r.name;}), datasets:[
-    {label:t('sales')+' %', data:rs.map(function(r){return pct(r.sales,r.salesTarget)||0;}), backgroundColor:COL.gold, borderRadius:6, barPercentage:.8},
-    {label:t('collection')+' %', data:rs.map(function(r){return pct(r.coll,r.collTarget)||0;}), backgroundColor:COL.sky, borderRadius:6, barPercentage:.8}
-  ]}, options: baseOpts({ indexAxis:'y', scales:{ x:{ suggestedMax:100, ticks:{ callback:function(v){return v+'%';} } }, y:{ position: S.lang==='ar'?'right':'left' } },
-    plugins:{ tooltip:{ callbacks:{ label:function(c){ return c.dataset.label+': '+c.raw+'%'; } } } } }) });
+    {label:t('sales'), data:rs.map(function(r){return r.sales;}), backgroundColor:COL.gold, borderRadius:6, barPercentage:.8},
+    {label:t('collection'), data:rs.map(function(r){return r.coll;}), backgroundColor:COL.sky, borderRadius:6, barPercentage:.8}
+  ]}, options: baseOpts({ indexAxis:'y', scales:{ x:{ ticks:{ callback:function(v){ return fmt(v); } } }, y:{ position: S.lang==='ar'?'right':'left' } },
+    plugins:{ tooltip:{ callbacks:{ label:function(c){ return c.dataset.label+': '+money(c.raw); } } } } }) });
 }
 
 /* ---------------- drill-down details ---------------- */
