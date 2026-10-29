@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#16365c; --navy2:#1d4a7a; --blue:#1a6fae; --sky:#1ba9cf; --cyan:#8ee6fb; --ice:#e8f7fd;
+  --gold:#e8a317; --gold2:#cf8c0c; --orange:#f37a1f; --green:#16a065; --red:#e0393e; --amber:#f0a500;
+  --bg:#f2f6fa; --card:#ffffff; --line:#e2eaf2; --ink:#16365c; --mut:#64748b; --soft:#f6f9fc;
+  --r:16px; --sh:0 6px 22px rgba(22,54,92,.08); --sh2:0 2px 8px rgba(22,54,92,.07);
+  --grad:linear-gradient(135deg,#1a5f9e 0%,#1b8fc4 55%,#1bb4d8 100%);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:Cairo,"Segoe UI",Tahoma,Arial,sans-serif;font-size:15px;line-height:1.5}
+button,input,select,textarea{font-family:inherit;font-size:15px;color:inherit}
+.hide{display:none!important}
+a{color:var(--blue)}
+/* ---------- header ---------- */
+.top{background:var(--grad);color:#fff;position:sticky;top:0;z-index:30;box-shadow:0 2px 14px rgba(22,54,92,.18)}
+.top .in{max-width:1240px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand b{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{display:block;font-size:12px;opacity:.85;font-weight:600;margin-top:-3px}
+.top .sp{flex:1}
+.who{font-size:13px;font-weight:600;opacity:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.chipbtn{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:5px 12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.chipbtn:hover{background:rgba(255,255,255,.26)}
+/* ---------- nav ---------- */
+.nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:56px;z-index:25}
+.nav .in{max-width:1240px;margin:0 auto;display:flex;gap:4px;padding:0 12px}
+.nav button{background:none;border:0;padding:12px 16px;font-weight:700;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent;display:flex;align-items:center;gap:8px}
+.nav button.on{color:var(--navy);border-bottom-color:var(--gold)}
+.nav svg{width:20px;height:20px}
+@media (max-width:760px){
+  .nav{position:fixed;top:auto;bottom:0;left:0;right:0;border-top:1px solid var(--line);border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+  .nav .in{padding:0}
+  .nav button{flex:1;flex-direction:column;gap:2px;padding:8px 2px 7px;font-size:12px;border-bottom:0;border-top:3px solid transparent}
+  .nav button.on{border-top-color:var(--gold);border-bottom:0;color:var(--blue)}
+  main{padding-bottom:90px!important}
+  .who{display:none}
+}
+main{max-width:1240px;margin:0 auto;padding:18px 16px 40px}
+/* ---------- titles ---------- */
+.ptitle{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:4px 0 16px}
+.ptitle h1{margin:0;font-size:24px;font-weight:800;color:var(--navy);position:relative;padding-bottom:6px}
+.ptitle h1:after{content:"";position:absolute;inset-inline-start:0;bottom:0;width:56px;height:3px;border-radius:3px;background:var(--gold)}
+.ptitle .sp{flex:1}
+.ptitle .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+h2{font-size:17px;margin:0 0 12px;color:var(--navy);font-weight:800}
+.mut{color:var(--mut)} .small{font-size:13px}
+/* ---------- cards / grid ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.grid{display:grid;gap:14px}
+.kpis{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));margin-bottom:16px}
+.g2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+@media (max-width:520px){.g2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr;gap:10px}}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:14px 16px;cursor:pointer;position:relative;overflow:hidden;text-align:start;width:100%}
+.kpi:hover{border-color:var(--cyan);box-shadow:0 8px 26px rgba(27,169,207,.18)}
+.kpi:before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--sky)}
+.kpi.gold:before{background:var(--gold)} .kpi.red:before{background:var(--red)} .kpi.green:before{background:var(--green)} .kpi.navy:before{background:var(--navy)}
+.kpi .l{font-size:13px;color:var(--mut);font-weight:700}
+.kpi .v{font-size:26px;font-weight:800;color:var(--navy);line-height:1.2;margin-top:2px}
+.kpi.red .v{color:var(--red)}
+.kpi .s{font-size:12.5px;color:var(--mut);margin-top:2px}
+@media (max-width:520px){.kpi .v{font-size:21px}.kpi{padding:12px}}
+.bar{height:8px;background:#eaf1f7;border-radius:8px;position:relative;margin-top:8px;overflow:visible}
+.bar i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,var(--sky),var(--blue))}
+.bar i.good{background:linear-gradient(90deg,#3ccf8e,var(--green))}
+.bar i.mid{background:linear-gradient(90deg,#ffc94a,var(--gold))}
+.bar i.bad{background:linear-gradient(90deg,#ff8a7a,var(--red))}
+.bar .pace{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--navy);opacity:.55}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:800;background:var(--ice);color:var(--blue)}
+.pill.good{background:#e3f7ee;color:var(--green)} .pill.mid{background:#fff4dc;color:#b77b00} .pill.bad{background:#fde8e8;color:var(--red)}
+.pill.grey{background:#eef2f6;color:var(--mut)}
+/* ---------- forms ---------- */
+label.f{display:block;font-size:13px;color:var(--mut);font-weight:700;margin:0 0 5px}
+.in-f{width:100%;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;outline:none;transition:border .15s}
+.in-f:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(27,169,207,.15)}
+.in-f.err{border-color:var(--red);background:#fff8f8}
+select.in-f{padding:10px 12px}
+textarea.in-f{min-height:70px;resize:vertical}
+.row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.fld{margin-bottom:12px}
+.btn{border:0;border-radius:999px;padding:11px 22px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.btn.gold{background:var(--gold);color:#fff;box-shadow:0 6px 16px rgba(232,163,23,.35)}
+.btn.gold:hover{background:var(--gold2)}
+.btn.blue{background:var(--blue);color:#fff}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--navy)}
+.btn.ghost:hover{border-color:var(--sky)}
+.btn.red{background:#fff;border:1.5px solid #f3c2c3;color:var(--red)}
+.btn.sm{padding:6px 13px;font-size:13px}
+.btn.big{padding:15px 26px;font-size:17px;width:100%}
+.btn:disabled{opacity:.55;cursor:default}
+.seg{display:inline-flex;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{background:none;border:0;border-radius:999px;padding:5px 12px;font-weight:700;color:var(--mut);cursor:pointer}
+.seg button.on{background:var(--navy);color:#fff}
+/* ---------- tables ---------- */
+.tw{overflow:auto;border-radius:12px;border:1px solid var(--line);background:#fff;max-width:100%}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+.t th{background:var(--soft);color:var(--mut);font-weight:800;font-size:12.5px;line-height:1.25;text-align:start;vertical-align:bottom;padding:10px 10px;white-space:normal;min-width:64px;position:sticky;top:0;z-index:1;border-bottom:1px solid var(--line)}
+.t td{padding:9px 10px;border-bottom:1px solid #eef3f7;vertical-align:middle;white-space:nowrap}
+.t tr:last-child td{border-bottom:0}
+.t tr.tot td{background:#f7fbfe;font-weight:800;border-top:2px solid var(--line)}
+.t td.n,.t th.n{text-align:end;font-variant-numeric:tabular-nums}
+.t td.wrap{white-space:normal;min-width:160px}
+.t .sticky{position:sticky;inset-inline-start:0;background:#fff;z-index:2;box-shadow:1px 0 0 var(--line)}
+.t th.sticky{background:var(--soft);z-index:3}
+.t tr.tot td.sticky{background:#f7fbfe}
+.num{background:none;border:0;padding:3px 7px;border-radius:8px;cursor:pointer;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.num:hover{background:var(--ice);color:var(--blue)}
+.num.red{color:var(--red)} .num.zero{color:#a5b3c2;font-weight:600}
+.minibar{width:70px;display:inline-block;vertical-align:middle}
+.minibar .bar{margin-top:0;height:7px}
+.tag{display:inline-block;font-size:11.5px;font-weight:800;border-radius:6px;padding:1px 7px;margin:1px 2px;background:#fde8e8;color:var(--red)}
+.tag.note{background:#eef2f6;color:var(--mut)}
+.ok{color:var(--green);font-weight:800}
+/* ---------- list cards (mobile customers/visits) ---------- */
+.lc{display:flex;gap:12px;align-items:center;padding:12px;border-bottom:1px solid #eef3f7}
+.lc:last-child{border-bottom:0}
+.lc .main{flex:1;min-width:0}
+.lc .main b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#c7d3df}
+.dot.on{background:var(--green)}
+/* ---------- modal ---------- */
+.mb{position:fixed;inset:0;background:rgba(14,36,62,.45);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:28px 12px;overflow:auto}
+.md{background:#fff;border-radius:18px;width:100%;max-width:880px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+.md.narrow{max-width:520px}
+.md .mh{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--grad);color:#fff}
+.md .mh b{font-size:17px;flex:1}
+.md .mh button{background:rgba(255,255,255,.18);border:0;color:#fff;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}
+.md .mc{padding:16px 18px}
+.md .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+/* alert box for missing fields */
+.alert{border-radius:14px;padding:14px 16px;margin:0 0 14px;border:1.5px solid #f6c6c7;background:#fff5f5}
+.alert b{color:var(--red);display:block;margin-bottom:6px}
+.alert ul{margin:0;padding-inline-start:20px}
+.alert li{margin:3px 0;font-weight:600}
+/* toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:999px;font-weight:700;z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:92vw;text-align:center}
+.toast.good{background:var(--green)} .toast.bad{background:var(--red)}
+@media (max-width:760px){.toast{bottom:86px}}
+/* ---------- login ---------- */
+.login{min-height:100vh;background:var(--grad);display:flex;align-items:center;justify-content:center;padding:24px}
+.login .box{background:#fff;border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.25);width:100%;max-width:410px;padding:26px 24px}
+.login h1{margin:8px 0 2px;text-align:center;font-size:21px;color:var(--navy)}
+.login .co{text-align:center;color:var(--mut);font-weight:700;font-size:13px;margin-bottom:18px}
+.login .logo{display:flex;justify-content:center}
+.err-line{color:var(--red);font-weight:700;margin:6px 0 0;min-height:22px}
+/* ---------- combobox ---------- */
+.cb{position:relative}
+.cb .list{position:absolute;inset-inline:0;top:100%;margin-top:4px;background:#fff;border:1.5px solid var(--sky);border-radius:12px;box-shadow:var(--sh);max-height:300px;overflow:auto;z-index:20}
+.cb .opt{padding:10px 13px;cursor:pointer;border-bottom:1px solid #f0f4f8}
+.cb .opt:last-child{border-bottom:0}
+.cb .opt:hover,.cb .opt.hl{background:var(--ice)}
+.cb .opt b{display:block}
+.cb .opt span{font-size:12.5px;color:var(--mut)}
+.picked{display:flex;align-items:center;gap:12px;border:1.5px solid var(--cyan);background:var(--ice);border-radius:12px;padding:10px 12px}
+.picked .main{flex:1;min-width:0}
+.loc{display:flex;align-items:center;gap:12px;border-radius:12px;padding:11px 13px;font-weight:700;border:1.5px solid var(--line);background:var(--soft)}
+.loc.ok{border-color:#9ee0c1;background:#effbf5;color:var(--green)}
+.loc.bad{border-color:#f6c6c7;background:#fff5f5;color:var(--red)}
+.loc .sp{flex:1}
+.spin{width:18px;height:18px;border:3px solid #cfe7f3;border-top-color:var(--sky);border-radius:50%;animation:sp 0.8s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{padding:40px;text-align:center;color:var(--mut)}
+.empty{padding:26px;text-align:center;color:var(--mut)}
+.chart{position:relative;height:280px}
+.chart.tall{height:360px}
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.subtabs button{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:7px 15px;font-weight:700;color:var(--mut);cursor:pointer}
+.subtabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.switch{position:relative;width:46px;height:26px;display:inline-block;vertical-align:middle}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:#cdd8e3;border-radius:26px;transition:.2s;cursor:pointer}
+.switch span:before{content:"";position:absolute;width:20px;height:20px;inset-inline-start:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+span{background:var(--green)}
+.switch input:checked+span:before{transform:translateX(20px)}
+[dir=rtl] .switch input:checked+span:before{transform:translateX(-20px)}
+.hint{background:var(--ice);border:1px solid #c9ecf8;border-radius:12px;padding:10px 13px;font-size:13.5px;color:var(--navy2)}
+.flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.right{margin-inline-start:auto}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   Field Visits v3 — UMDCO
+   ===================================================================== */
+var T = {
+en:{
+  appName:'Field Visits', company:'United Manarah Medical Development Est.',
+  email:'Email (login ID)', password:'Password', login:'Sign in', logout:'Sign out', lang:'عربي',
+  summary:'Summary', customers:'Customers', visits:'Visits', settings:'Settings',
+  newPw:'New password', oldPw:'Current password', confirmPw:'Confirm new password', changePw:'Change password',
+  mustChangeTitle:'Set your own password', mustChangeText:'You are using the default password. Please choose a new one (at least 6 characters).',
+  pwMismatch:'The two new passwords do not match', saved:'Saved', save:'Save', cancel:'Cancel', close:'Close', add:'Add', edit:'Edit', del:'Delete',
+  month:'Month', day:'Day', rep:'Representative', reps:'Representatives', allReps:'All representatives', area:'Area', allAreas:'All areas',
+  sales:'Sales', collection:'Collection', target:'Target', ach:'Achieved', ofTarget:'of target', pace:'Expected by today',
+  visitsMTD:'Visits (month to date)', visitsDayL:'Visits on', fakeDayL:'Fake visits on', fakeMTD:'Fake visits (month)',
+  byRep:'By representative', total:'Total', clientsN:'Customers', noData:'No data yet', loading:'Loading…',
+  workDays:'working days', daysLeft:'working days left', salesAch:'Sales & collection achievement %',
+  // customers
+  addCustomer:'Add customer', editCustomer:'Edit customer', name:'Name', mapLink:'Google Maps link', assignedTo:'Assigned representative',
+  search:'Search…', openMap:'Map', hasLoc:'Location set', noLoc:'No location yet', lastVisit:'Last visit', never:'Never',
+  locFound:'Location read from the map link', locNotFound:'Saved. The link had no readable location — it will be set on the first clean visit.',
+  confirmDelCustomer:'Delete this customer? Visits already recorded are kept.', customerDeleted:'Customer deleted',
+  mapHelp:'Open the place in Google Maps → Share → Copy link, then paste here.',
+  // visits
+  newVisit:'New visit', chooseCustomer:'Customer', pickCustomer:'Search and choose the customer…', change:'Change',
+  personName:'Visited person name', mobile:'Mobile number', notes:'Notes (optional)', location:'Location',
+  locGetting:'Getting your location…', locReady:'Location ready', locOff:'Location is off or not allowed', retry:'Retry location',
+  saveVisit:'Save visit', visitSaved:'Visit saved ✓', completeTitle:'Kindly complete the following:',
+  miss_CUSTOMER:'Choose the customer from the list', miss_PERSON:'Enter the visited person name', miss_MOBILE:'Enter the visited person mobile number',
+  miss_MOBILE_BAD:'Mobile number looks wrong — digits only, e.g. 05xxxxxxxx', miss_LOCATION:'Turn on location (GPS) and allow it for this app, then tap “Retry location”',
+  myVisits:'My visits', visitsOfDay:'Visits of the day', today:'Today', yesterday:'Yesterday', thisMonth:'This month', lastMonth:'Last month', custom:'Custom',
+  from:'From', to:'To', time:'Time', customer:'Customer', person:'Person', flags:'Flags', distance:'Distance', accuracy:'Accuracy', pin:'Pin',
+  totalVisits:'Total visits', avgDaily:'Average daily visits', perWorkDay:'per working day', activeReps:'Active reps', covered:'Customers covered',
+  fakeVisits:'Fake visits', dailyTrend:'Daily visits trend', byRepChart:'Visits by representative', repTrend:'Representative trend',
+  teamAvg:'Team average per rep', byHour:'Visits by hour', byArea:'Top areas', visitList:'Visit list', fakeOnly:'Fake only', showMore:'Show more',
+  clean:'Clean', fake:'Fake', coverage:'Coverage', daysActive:'Days active', avgDay:'Avg/day', visitsN:'Visits',
+  noVisitsDay:'No visits on this day', visitDetails:'Visit details',
+  // settings
+  users:'Users & access', targets:'Targets', salesColl:'Sales & collection', system:'System', myAccount:'My account',
+  addUser:'Add user', editUser:'Edit user', role:'Access', roleRep:'Representative', roleMgr:'Manager', active:'Can sign in', disabled:'Disabled',
+  resetPw:'Reset password', resetDone:'Password reset to 000000', confirmReset:'Reset this user’s password to 000000?',
+  confirmDelUser:'Delete this user?', defaultPw:'default password', phone:'Phone',
+  salesTarget:'Sales target', collTarget:'Collection target', carried:'carried from', saveTargets:'Save targets',
+  addEntry:'Add entry', type:'Type', amount:'Amount', ref:'Ref / invoice', date:'Date', pasteImport:'Paste from Excel',
+  pasteHelp:'Columns: Date | Rep (email or name) | Type (Sales / Collection) | Amount | Customer | Ref. One line per entry.',
+  importBtn:'Import', imported:'Imported', badLines:'Lines skipped',
+  farLimit:'Flag a visit when farther than (metres) from the customer', weekend:'Weekend days', emailAlerts:'Email me each fake visit',
+  days:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], language:'Language',
+  tag_MOCK:'Fake-GPS app', tag_FAR:'Far from customer', tag_FROZEN:'Same pin as another customer', tag_TELEPORT:'Impossible travel speed',
+  tag_ROUND:'Typed coordinates', tag_BURST:'Too soon after last visit', tag_DUP:'Same customer twice today', tag_NO_CLIENT_LOC:'Customer has no location',
+  tag_LOW_ACC:'Weak GPS accuracy', tag_HOURS:'Outside working hours',
+  e_LOGIN_MISSING:'Enter your email and password', e_LOGIN_WRONG:'Wrong email or password', e_LOGIN_DISABLED:'Your access is disabled — contact your manager',
+  e_AUTH:'Please sign in again', e_NOT_ALLOWED:'Not allowed', e_PW_SHORT:'Password must be at least 6 characters', e_PW_DEFAULT:'Choose a password other than 000000',
+  e_PW_OLD_WRONG:'Current password is wrong', e_BAD_EMAIL:'Enter a valid email / login ID', e_NAME_REQUIRED:'Name is required', e_USER_EXISTS:'This email already exists',
+  e_NOT_FOUND:'Not found — refresh and try again', e_SELF_LOCK:'You cannot remove your own manager access', e_USER_HAS_CLIENTS:'This user still has customers assigned. Move them first.',
+  e_REP_REQUIRED:'Choose the representative', e_REP_UNKNOWN:'Unknown representative', e_NOT_YOUR_CLIENT:'This customer is not assigned to you',
+  e_BAD_TYPE:'Choose Sales or Collection', e_BAD_AMOUNT:'Enter the amount', e_RANGE_TOO_LONG:'Please choose a shorter period', e_BAD_VALUE:'Check the values',
+  e_SERVER:'Server error — try again', e_NETWORK:'No connection — check internet and try again',
+  details:'Details', refresh:'Refresh'
+},
+ar:{
+  appName:'الزيارات الميدانية', company:'مؤسسة المنارة المتحدة للتطوير الطبي',
+  email:'البريد الإلكتروني (اسم الدخول)', password:'كلمة المرور', login:'دخول', logout:'خروج', lang:'English',
+  summary:'الملخص', customers:'العملاء', visits:'الزيارات', settings:'الإعدادات',
+  newPw:'كلمة المرور الجديدة', oldPw:'كلمة المرور الحالية', confirmPw:'تأكيد كلمة المرور الجديدة', changePw:'تغيير كلمة المرور',
+  mustChangeTitle:'اختر كلمة مرور خاصة بك', mustChangeText:'أنت تستخدم كلمة المرور الافتراضية. من فضلك اختر كلمة جديدة (6 أحرف على الأقل).',
+  pwMismatch:'كلمتا المرور غير متطابقتين', saved:'تم الحفظ', save:'حفظ', cancel:'إلغاء', close:'إغلاق', add:'إضافة', edit:'تعديل', del:'حذف',
+  month:'الشهر', day:'اليوم', rep:'المندوب', reps:'المندوبين', allReps:'كل المندوبين', area:'المنطقة', allAreas:'كل المناطق',
+  sales:'المبيعات', collection:'التحصيل', target:'المستهدف', ach:'المحقق', ofTarget:'من المستهدف', pace:'المتوقع حتى اليوم',
+  visitsMTD:'الزيارات (من بداية الشهر)', visitsDayL:'زيارات يوم', fakeDayL:'زيارات وهمية يوم', fakeMTD:'زيارات وهمية (الشهر)',
+  byRep:'حسب المندوب', total:'الإجمالي', clientsN:'العملاء', noData:'لا توجد بيانات بعد', loading:'جارٍ التحميل…',
+  workDays:'أيام عمل', daysLeft:'أيام عمل متبقية', salesAch:'نسبة تحقيق المبيعات والتحصيل %',
+  addCustomer:'إضافة عميل', editCustomer:'تعديل العميل', name:'الاسم', mapLink:'رابط خرائط جوجل', assignedTo:'المندوب المسؤول',
+  search:'بحث…', openMap:'الخريطة', hasLoc:'الموقع محدد', noLoc:'لا يوجد موقع بعد', lastVisit:'آخر زيارة', never:'لم يُزر',
+  locFound:'تم قراءة الموقع من الرابط', locNotFound:'تم الحفظ. لم نتمكن من قراءة الموقع من الرابط — سيُحدد من أول زيارة سليمة.',
+  confirmDelCustomer:'حذف هذا العميل؟ الزيارات المسجلة ستبقى.', customerDeleted:'تم حذف العميل',
+  mapHelp:'افتح المكان في خرائط جوجل ← مشاركة ← نسخ الرابط، ثم الصقه هنا.',
+  newVisit:'زيارة جديدة', chooseCustomer:'العميل', pickCustomer:'ابحث واختر العميل…', change:'تغيير',
+  personName:'اسم الشخص الذي تمت زيارته', mobile:'رقم الجوال', notes:'ملاحظات (اختياري)', location:'الموقع',
+  locGetting:'جارٍ تحديد موقعك…', locReady:'تم تحديد الموقع', locOff:'الموقع مغلق أو غير مسموح', retry:'إعادة تحديد الموقع',
+  saveVisit:'حفظ الزيارة', visitSaved:'تم حفظ الزيارة ✓', completeTitle:'يرجى استكمال ما يلي:',
+  miss_CUSTOMER:'اختر العميل من القائمة', miss_PERSON:'أدخل اسم الشخص الذي تمت زيارته', miss_MOBILE:'أدخل رقم جوال الشخص الذي تمت زيارته',
+  miss_MOBILE_BAD:'رقم الجوال غير صحيح — أرقام فقط مثل 05xxxxxxxx', miss_LOCATION:'شغّل الموقع (GPS) واسمح للتطبيق باستخدامه ثم اضغط «إعادة تحديد الموقع»',
+  myVisits:'زياراتي', visitsOfDay:'زيارات اليوم المحدد', today:'اليوم', yesterday:'أمس', thisMonth:'هذا الشهر', lastMonth:'الشهر الماضي', custom:'مخصص',
+  from:'من', to:'إلى', time:'الوقت', customer:'العميل', person:'الشخص', flags:'الملاحظات', distance:'المسافة', accuracy:'الدقة', pin:'الموقع',
+  totalVisits:'إجمالي الزيارات', avgDaily:'متوسط الزيارات اليومي', perWorkDay:'لكل يوم عمل', activeReps:'المندوبون النشطون', covered:'العملاء المزارون',
+  fakeVisits:'الزيارات الوهمية', dailyTrend:'اتجاه الزيارات اليومي', byRepChart:'الزيارات حسب المندوب', repTrend:'اتجاه المندوب',
+  teamAvg:'متوسط الفريق لكل مندوب', byHour:'الزيارات حسب الساعة', byArea:'أعلى المناطق', visitList:'قائمة الزيارات', fakeOnly:'الوهمية فقط', showMore:'عرض المزيد',
+  clean:'سليمة', fake:'وهمية', coverage:'التغطية', daysActive:'أيام العمل', avgDay:'المتوسط/يوم', visitsN:'الزيارات',
+  noVisitsDay:'لا توجد زيارات في هذا اليوم', visitDetails:'تفاصيل الزيارة',
+  users:'المستخدمون والصلاحيات', targets:'المستهدفات', salesColl:'المبيعات والتحصيل', system:'النظام', myAccount:'حسابي',
+  addUser:'إضافة مستخدم', editUser:'تعديل المستخدم', role:'الصلاحية', roleRep:'مندوب', roleMgr:'مدير', active:'مسموح بالدخول', disabled:'موقوف',
+  resetPw:'إعادة تعيين كلمة المرور', resetDone:'تمت إعادة كلمة المرور إلى 000000', confirmReset:'إعادة كلمة مرور هذا المستخدم إلى 000000؟',
+  confirmDelUser:'حذف هذا المستخدم؟', defaultPw:'كلمة مرور افتراضية', phone:'الجوال',
+  salesTarget:'مستهدف المبيعات', collTarget:'مستهدف التحصيل', carried:'منقول من', saveTargets:'حفظ المستهدفات',
+  addEntry:'إضافة قيد', type:'النوع', amount:'المبلغ', ref:'المرجع / الفاتورة', date:'التاريخ', pasteImport:'لصق من إكسل',
+  pasteHelp:'الأعمدة: التاريخ | المندوب (البريد أو الاسم) | النوع (مبيعات / تحصيل) | المبلغ | العميل | المرجع. سطر لكل قيد.',
+  importBtn:'استيراد', imported:'تم استيراد', badLines:'أسطر تم تجاهلها',
+  farLimit:'اعتبر الزيارة مشبوهة إذا كانت أبعد من (متر) عن العميل', weekend:'أيام الإجازة', emailAlerts:'أرسل لي بريدًا عند كل زيارة وهمية',
+  days:['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'], language:'اللغة',
+  tag_MOCK:'تطبيق موقع وهمي', tag_FAR:'بعيد عن العميل', tag_FROZEN:'نفس موقع عميل آخر', tag_TELEPORT:'سرعة تنقل غير ممكنة',
+  tag_ROUND:'إحداثيات مُدخلة يدويًا', tag_BURST:'مباشرة بعد الزيارة السابقة', tag_DUP:'نفس العميل مرتين اليوم', tag_NO_CLIENT_LOC:'العميل بلا موقع',
+  tag_LOW_ACC:'دقة موقع ضعيفة', tag_HOURS:'خارج ساعات العمل',
+  e_LOGIN_MISSING:'أدخل البريد وكلمة المرور', e_LOGIN_WRONG:'البريد أو كلمة المرور غير صحيحة', e_LOGIN_DISABLED:'تم إيقاف دخولك — تواصل مع مديرك',
+  e_AUTH:'من فضلك سجّل الدخول مرة أخرى', e_NOT_ALLOWED:'غير مسموح', e_PW_SHORT:'كلمة المرور 6 أحرف على الأقل', e_PW_DEFAULT:'اختر كلمة مرور غير 000000',
+  e_PW_OLD_WRONG:'كلمة المرور الحالية غير صحيحة', e_BAD_EMAIL:'أدخل بريدًا / اسم دخول صحيح', e_NAME_REQUIRED:'الاسم مطلوب', e_USER_EXISTS:'هذا البريد موجود مسبقًا',
+  e_NOT_FOUND:'غير موجود — حدّث الصفحة وحاول مجددًا', e_SELF_LOCK:'لا يمكنك إزالة صلاحية المدير عن نفسك', e_USER_HAS_CLIENTS:'هذا المستخدم لديه عملاء. انقلهم أولاً.',
+  e_REP_REQUIRED:'اختر المندوب', e_REP_UNKNOWN:'مندوب غير معروف', e_NOT_YOUR_CLIENT:'هذا العميل غير مسند إليك',
+  e_BAD_TYPE:'اختر مبيعات أو تحصيل', e_BAD_AMOUNT:'أدخل المبلغ', e_RANGE_TOO_LONG:'اختر فترة أقصر', e_BAD_VALUE:'راجع القيم',
+  e_SERVER:'خطأ في الخادم — حاول مرة أخرى', e_NETWORK:'لا يوجد اتصال — تحقق من الإنترنت وحاول مجددًا',
+  details:'التفاصيل', refresh:'تحديث'
+}};
+
+/* ---------------- state ---------------- */
+var S = { lang:'en', token:'', me:null, page:'summary', month:'', day:'', charts:[], clients:null };
+function store(k, v){ try{ if(v===undefined) return localStorage.getItem('fv_'+k); if(v===null) localStorage.removeItem('fv_'+k); else localStorage.setItem('fv_'+k, v);}catch(e){ return null; } }
+function t(k){ return (T[S.lang]&&T[S.lang][k]!==undefined)?T[S.lang][k]:(T.en[k]!==undefined?T.en[k]:k); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function $(s,el){ return (el||document).querySelector(s); }
+function $$(s,el){ return Array.prototype.slice.call((el||document).querySelectorAll(s)); }
+function fmt(n){ n=Number(n)||0; return n.toLocaleString('en-US',{maximumFractionDigits:0}); }
+function money(n){ return fmt(n); }
+function pct(a,b){ return b>0? Math.round(a/b*100) : null; }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()); }
+function p2(n){ return (n<10?'0':'')+n; }
+function addDays(ds,n){ var d=new Date(ds+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function monthEnd(m){ var y=+m.slice(0,4), mo=+m.slice(5,7); return new Date(Date.UTC(y,mo,0)).toISOString().slice(0,10); }
+function locale(){ return S.lang==='ar'?'ar-SA-u-ca-gregory-nu-latn':'en-GB'; }
+function dLabel(ds, long){ if(!ds) return ''; var d=new Date(ds+'T12:00:00Z'); return d.toLocaleDateString(locale(),long?{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}:{day:'numeric',month:'short',timeZone:'UTC'}); }
+function mLabel(m){ var d=new Date(m+'-15T12:00:00Z'); return d.toLocaleDateString(locale(),{month:'long',year:'numeric',timeZone:'UTC'}); }
+function norm(s){ return String(s||'').toLowerCase().replace(/[ً-ْـ]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim(); }
+function cls(p, pace){ if(p===null) return ''; var ref = pace||100; return p>=ref?'good':(p>=ref*0.85?'mid':'bad'); }
+
+/* ---------------- server ---------------- */
+function call(action, data){
+  return new Promise(function(res, rej){
+    var req = Object.assign({action:action, token:S.token}, data||{});
+    google.script.run.withSuccessHandler(function(r){
+      if(r && r.ok) return res(r.data);
+      var code = (r && r.err) || 'SERVER';
+      if(code==='AUTH' && action!=='login'){ signOut(true); }
+      var e = new Error(code); e.code=code; e.msg=r&&r.msg; rej(e);
+    }).withFailureHandler(function(err){
+      var e = new Error('NETWORK'); e.code='NETWORK'; e.msg=String(err&&err.message||err); rej(e);
+    }).api(req);
+  });
+}
+function errText(e){ var c=e&&e.code||'SERVER'; var s=t('e_'+c); return s.indexOf('e_')===0?(t('e_SERVER')+' ('+c+')'):s; }
+var toastTimer;
+function toast(msg, kind){ var el=$('#toast'); if(!el){ el=document.createElement('div'); el.id='toast'; document.body.appendChild(el);} el.className='toast '+(kind||''); el.textContent=msg; el.classList.remove('hide'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){el.classList.add('hide');}, 3200); }
+
+/* ---------------- icons ---------------- */
+var IC = {
+  summary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  customers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>',
+  visits:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>'
+};
+function logo(size){
+  size=size||40;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 100 100" aria-hidden="true">'+
+   hex(50,27,'#1b8fc4')+hex(29,63,'#f37a1f')+hex(71,63,'#fff')+
+   '<path d="M44 17h12M47 17v9l-6 12h18l-6-12v-9" fill="none" stroke="#16365c" stroke-width="3" stroke-linejoin="round"/>'+
+   '<path d="M29 50v26M23 57c6-4 12 2 6 6s0 10 6 6" fill="none" stroke="#f37a1f" stroke-width="3.2" stroke-linecap="round"/>'+
+   '<path d="M63 56c3-4 6-3 8-1 2-2 5-3 8 1 2 4 0 8-2 13-1 4-2 7-3 7-2 0-2-7-3-7s-1 7-3 7c-1 0-2-3-3-7-2-5-4-9-2-13z" fill="#fff" stroke="#16365c" stroke-width="2"/>'+
+   '</svg>';
+  function hex(cx,cy){ var r=20,pts=[]; for(var i=0;i<6;i++){var a=Math.PI/180*(60*i-30); pts.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1));} return '<polygon points="'+pts.join(' ')+'" fill="#8ee6fb" stroke="#e8a317" stroke-width="2.6"/>'; }
+}
+
+/* ---------------- boot ---------------- */
+function applyLang(){ document.documentElement.lang=S.lang; document.documentElement.dir=S.lang==='ar'?'rtl':'ltr'; }
+function boot(){
+  S.lang = store('lang') || 'en'; applyLang();
+  S.token = store('token') || '';
+  S.month = todayStr().slice(0,7);
+  if(!S.token) return showLogin();
+  $('#app').innerHTML = '<div class="loading">'+t('loading')+'</div>';
+  call('me').then(function(me){ S.me=me; if(me.mustChange) return showMustChange(); shell(); })
+    .catch(function(e){ if(e.code!=='AUTH') { showLogin(errText(e)); } });
+}
+function toggleLang(){ S.lang = S.lang==='en'?'ar':'en'; store('lang', S.lang); applyLang(); if(S.me && !S.me.mustChange) shell(); else if(S.me) showMustChange(); else showLogin(); }
+function signOut(silent){ if(S.token && !silent){ call('logout').catch(function(){}); } S.token=''; S.me=null; store('token', null); S.clients=null; showLogin(silent? t('e_AUTH'):''); }
+
+/* ---------------- login ---------------- */
+function showLogin(msg){
+  destroyCharts();
+  $('#app').innerHTML =
+  '<div class="login"><div class="box">'+
+   '<div class="flex" style="justify-content:flex-end"><button class="btn ghost sm" onclick="toggleLang()">'+t('lang')+'</button></div>'+
+   '<div class="logo">'+logo(86)+'</div>'+
+   '<h1>'+t('appName')+'</h1><div class="co">'+t('company')+'</div>'+
+   '<div class="fld"><label class="f">'+t('email')+'</label><input id="lg_e" class="in-f" type="email" autocomplete="username" inputmode="email" dir="ltr"></div>'+
+   '<div class="fld"><label class="f">'+t('password')+'</label><input id="lg_p" class="in-f" type="password" autocomplete="current-password" dir="ltr"></div>'+
+   '<button id="lg_b" class="btn gold big">'+t('login')+'</button>'+
+   '<div class="err-line" id="lg_m">'+esc(msg||'')+'</div>'+
+  '</div></div>';
+  var last = store('email'); if(last) $('#lg_e').value=last;
+  $('#lg_b').onclick = doLogin;
+  $('#lg_p').onkeydown = function(e){ if(e.key==='Enter') doLogin(); };
+}
+function doLogin(){
+  var em=$('#lg_e').value.trim(), pw=$('#lg_p').value;
+  $('#lg_m').textContent=''; $('#lg_b').disabled=true;
+  call('login',{email:em, password:pw}).then(function(r){
+    S.token=r.token; S.me=r.me; store('token', r.token); store('email', em);
+    if(r.me.mustChange) showMustChange(pw); else { S.page='summary'; shell(); }
+  }).catch(function(e){ $('#lg_m').textContent=errText(e); $('#lg_b').disabled=false; });
+}
+function showMustChange(oldPw){
+  $('#app').innerHTML =
+  '<div class="login"><div class="box">'+
+   '<div class="flex" style="justify-content:flex-end"><button class="btn ghost sm" onclick="toggleLang()">'+t('lang')+'</button></div>'+
+   '<div class="logo">'+logo(64)+'</div><h1>'+t('mustChangeTitle')+'</h1>'+
+   '<p class="mut small" style="text-align:center">'+t('mustChangeText')+'</p>'+
+   (oldPw?'':'<div class="fld"><label class="f">'+t('oldPw')+'</label><input id="mc_o" class="in-f" type="password" dir="ltr"></div>')+
+   '<div class="fld"><label class="f">'+t('newPw')+'</label><input id="mc_n" class="in-f" type="password" dir="ltr" autocomplete="new-password"></div>'+
+   '<div class="fld"><label class="f">'+t('confirmPw')+'</label><input id="mc_c" class="in-f" type="password" dir="ltr" autocomplete="new-password"></div>'+
+   '<button id="mc_b" class="btn gold big">'+t('save')+'</button>'+
+   '<div class="err-line" id="mc_m"></div>'+
+   '<div style="text-align:center"><button class="btn ghost sm" onclick="signOut()">'+t('logout')+'</button></div>'+
+  '</div></div>';
+  $('#mc_b').onclick=function(){
+    var o = oldPw || ($('#mc_o')&&$('#mc_o').value) || '000000', n=$('#mc_n').value, c=$('#mc_c').value;
+    if(n!==c){ $('#mc_m').textContent=t('pwMismatch'); return; }
+    $('#mc_b').disabled=true;
+    call('changePassword',{oldPassword:o,newPassword:n}).then(function(){ S.me.mustChange=false; toast(t('saved'),'good'); S.page='summary'; shell(); })
+      .catch(function(e){ $('#mc_m').textContent=errText(e); $('#mc_b').disabled=false; });
+  };
+}
+
+/* ---------------- shell + nav ---------------- */
+function pages(){ return ['summary','customers','visits','settings']; }
+function shell(){
+  destroyCharts();
+  var nav = pages().map(function(p){ return '<button data-p="'+p+'" class="'+(S.page===p?'on':'')+'">'+IC[p]+'<span>'+t(p)+'</span></button>'; }).join('');
+  $('#app').innerHTML =
+   '<div class="top"><div class="in">'+
+     '<div class="brand">'+logo(38)+'<div><b>'+t('appName')+'</b><small>UMDCO</small></div></div>'+
+     '<div class="sp"></div><div class="who">'+esc(S.me.name)+' · '+(S.me.role==='manager'?t('roleMgr'):t('roleRep'))+'</div>'+
+     '<button class="chipbtn" onclick="toggleLang()">'+t('lang')+'</button>'+
+     '<button class="chipbtn" onclick="signOut()">'+t('logout')+'</button>'+
+   '</div></div>'+
+   '<div class="nav"><div class="in">'+nav+'</div></div>'+
+   '<main id="view"></main>';
+  $$('.nav button').forEach(function(b){ b.onclick=function(){ go(b.getAttribute('data-p')); }; });
+  go(S.page);
+}
+function go(p){
+  S.page=p; destroyCharts();
+  $$('.nav button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-p')===p); });
+  var v=$('#view'); v.innerHTML='<div class="loading"><span class="spin"></span></div>';
+  window.scrollTo(0,0);
+  var mgr = S.me.role==='manager';
+  ({summary: mgr?pgSummaryMgr:pgSummaryRep, customers:pgCustomers, visits: mgr?pgVisitsMgr:pgVisitsRep, settings:pgSettings})[p]();
+}
+function fail(e){ var v=$('#view'); if(v) v.innerHTML='<div class="card empty">'+esc(errText(e))+' <br><br><button class="btn ghost sm" onclick="go(S.page)">'+t('refresh')+'</button></div>'; }
+function destroyCharts(){ (S.charts||[]).forEach(function(c){ try{c.destroy();}catch(e){} }); S.charts=[]; }
+function monthOptions(sel){ var out='', d=new Date(); d.setDate(15); for(var i=0;i<18;i++){ var m=d.getFullYear()+'-'+p2(d.getMonth()+1); out+='<option value="'+m+'"'+(m===sel?' selected':'')+'>'+mLabel(m)+'</option>'; d.setMonth(d.getMonth()-1);} return out; }
+
+/* ---------------- modal ---------------- */
+function modal(title, body, foot, narrow){
+  closeModal();
+  var el=document.createElement('div'); el.className='mb'; el.id='modal';
+  el.innerHTML='<div class="md'+(narrow?' narrow':'')+'"><div class="mh"><b>'+esc(title)+'</b><button aria-label="close">×</button></div><div class="mc">'+body+'</div>'+(foot?'<div class="mf">'+foot+'</div>':'')+'</div>';
+  document.body.appendChild(el);
+  $('.mh button',el).onclick=closeModal;
+  el.addEventListener('mousedown',function(e){ if(e.target===el) closeModal(); });
+  return el;
+}
+function closeModal(){ var m=$('#modal'); if(m) m.remove(); }
+
+/* ======================================================================
+   PAGE 1 — SUMMARY (manager)
+   ====================================================================== */
+function bar(p, pace){ var w=Math.max(0,Math.min(100,p||0)); return '<div class="bar"><i class="'+cls(p,pace)+'" style="width:'+w+'%"></i>'+(pace?'<span class="pace" style="inset-inline-start:'+Math.min(100,pace)+'%"></span>':'')+'</div>'; }
+function pctPill(p, pace){ return p===null?'<span class="pill grey">—</span>':'<span class="pill '+cls(p,pace)+'">'+p+'%</span>'; }
+function pgSummaryMgr(){
+  if(!S.day) S.day = addDays(todayStr(),-1);
+  call('summary',{month:S.month, day:S.day}).then(function(d){
+    S.day = d.day;
+    var T0=d.total, pace = d.workDays? Math.round(d.workDaysDone/d.workDays*100):null;
+    var sp=pct(T0.sales,T0.salesTarget), cp=pct(T0.coll,T0.collTarget);
+    var html =
+    '<div class="ptitle"><h1>'+t('summary')+'</h1><div class="sp"></div><div class="tools">'+
+      '<select id="s_m" class="in-f" style="width:auto">'+monthOptions(S.month)+'</select>'+
+      '<label class="f" style="margin:0">'+t('day')+'</label><input id="s_d" type="date" class="in-f" style="width:auto" value="'+d.day+'" max="'+d.today+'">'+
+    '</div></div>'+
+    '<div class="kpis">'+
+      kpi('gold','sales','', t('sales'), money(T0.sales), t('target')+': '+money(T0.salesTarget), sp, pace)+
+      kpi('green','collection','', t('collection'), money(T0.coll), t('target')+': '+money(T0.collTarget), cp, pace)+
+      kpi('navy','visitsMTD','', t('visitsMTD'), fmt(T0.visitsMTD), (d.workDaysDone)+' / '+d.workDays+' '+t('workDays'))+
+      kpi('','visitsDay','', t('visitsDayL')+' '+dLabel(d.day), fmt(T0.visitsDay), dLabel(d.day,true))+
+      kpi('red','fakeDay','', t('fakeDayL')+' '+dLabel(d.day), fmt(T0.fakeDay), t('fakeMTD')+': '+fmt(T0.fakeMTD))+
+    '</div>'+
+    '<div class="card" style="margin-bottom:16px"><div class="flex"><h2 style="margin:0">'+t('byRep')+'</h2><span class="right small mut">'+t('pace')+': <b>'+(pace===null?'—':pace+'%')+'</b> · '+t('day')+': '+dLabel(d.day,true)+'</span></div><div style="height:10px"></div>'+
+      repTable(d, pace)+'</div>'+
+    '<div class="card"><h2>'+t('salesAch')+'</h2><div class="chart tall"><canvas id="c_ach"></canvas></div></div>';
+    $('#view').innerHTML = html;
+    $('#s_m').onchange=function(){ S.month=this.value; go('summary'); };
+    $('#s_d').onchange=function(){ if(this.value){ S.day=this.value; go('summary'); } };
+    $$('[data-d]').forEach(function(b){ b.onclick=function(){ openDetails(b.getAttribute('data-d'), b.getAttribute('data-rep')||'', b.getAttribute('data-title')||''); }; });
+    achChart(d.reps, pace);
+  }).catch(fail);
+}
+function kpi(color, kind, rep, label, value, sub, p, pace){
+  return '<button class="kpi '+color+'" data-d="'+kind+'" data-rep="'+rep+'" data-title="'+esc(label)+'"><div class="l">'+esc(label)+'</div><div class="v">'+value+'</div>'+
+    (p!==undefined? '<div class="flex" style="gap:6px"><span class="s">'+esc(sub)+'</span><span class="right">'+pctPill(p,pace)+'</span></div>'+bar(p,pace) : '<div class="s">'+esc(sub)+'</div>')+'</button>';
+}
+function nb(kind, rep, val, title, red){ return '<button class="num'+(red&&val?' red':'')+(val?'':' zero')+'" data-d="'+kind+'" data-rep="'+esc(rep)+'" data-title="'+esc(title)+'">'+(typeof val==='string'?val:fmt(val))+'</button>'; }
+function repTable(d, pace){
+  if(!d.reps.length) return '<div class="empty">'+t('noData')+'</div>';
+  var dl=dLabel(d.day);
+  var h='<div class="tw"><table class="t"><thead><tr><th class="sticky">'+t('rep')+'</th>'+
+   '<th class="n">'+t('sales')+'</th><th class="n">'+t('target')+'</th><th>'+t('ach')+'</th>'+
+   '<th class="n">'+t('collection')+'</th><th class="n">'+t('target')+'</th><th>'+t('ach')+'</th>'+
+   '<th class="n">'+t('visitsMTD')+'</th><th class="n">'+t('visitsDayL')+' '+dl+'</th><th class="n">'+t('fakeDayL')+' '+dl+'</th><th class="n">'+t('fakeMTD')+'</th><th class="n">'+t('clientsN')+'</th></tr></thead><tbody>';
+  d.reps.forEach(function(r){
+    var sp=pct(r.sales,r.salesTarget), cp=pct(r.coll,r.collTarget), n=r.name;
+    h+='<tr><td class="sticky"><b>'+esc(r.name)+'</b>'+(r.active?'':' <span class="pill grey">'+t('disabled')+'</span>')+'</td>'+
+      '<td class="n">'+nb('sales',r.email,money(r.sales),t('sales')+' — '+n)+'</td><td class="n mut">'+money(r.salesTarget)+'</td>'+
+      '<td><span class="minibar">'+bar(sp,pace)+'</span> '+pctPill(sp,pace)+'</td>'+
+      '<td class="n">'+nb('collection',r.email,money(r.coll),t('collection')+' — '+n)+'</td><td class="n mut">'+money(r.collTarget)+'</td>'+
+      '<td><span class="minibar">'+bar(cp,pace)+'</span> '+pctPill(cp,pace)+'</td>'+
+      '<td class="n">'+nb('visitsMTD',r.email,r.visitsMTD,t('visitsMTD')+' — '+n)+'</td>'+
+      '<td class="n">'+nb('visitsDay',r.email,r.visitsDay,t('visitsDayL')+' '+dl+' — '+n)+'</td>'+
+      '<td class="n">'+nb('fakeDay',r.email,r.fakeDay,t('fakeDayL')+' '+dl+' — '+n,true)+'</td>'+
+      '<td class="n">'+nb('fakeMTD',r.email,r.fakeMTD,t('fakeMTD')+' — '+n,true)+'</td>'+
+      '<td class="n">'+nb('clients',r.email,r.clients,t('clientsN')+' — '+n)+'</td></tr>';
+  });
+  var T0=d.total, sp=pct(T0.sales,T0.salesTarget), cp=pct(T0.coll,T0.collTarget);
+  h+='<tr class="tot"><td class="sticky">'+t('total')+'</td><td class="n">'+nb('sales','',money(T0.sales),t('sales'))+'</td><td class="n">'+money(T0.salesTarget)+'</td><td>'+pctPill(sp,pace)+'</td>'+
+    '<td class="n">'+nb('collection','',money(T0.coll),t('collection'))+'</td><td class="n">'+money(T0.collTarget)+'</td><td>'+pctPill(cp,pace)+'</td>'+
+    '<td class="n">'+nb('visitsMTD','',T0.visitsMTD,t('visitsMTD'))+'</td><td class="n">'+nb('visitsDay','',T0.visitsDay,t('visitsDayL')+' '+dl)+'</td>'+
+    '<td class="n">'+nb('fakeDay','',T0.fakeDay,t('fakeDayL')+' '+dl,true)+'</td><td class="n">'+nb('fakeMTD','',T0.fakeMTD,t('fakeMTD'),true)+'</td><td class="n">'+fmt(T0.clients)+'</td></tr>';
+  return h+'</tbody></table></div>';
+}
+var COL = {navy:'#16365c', blue:'#1a6fae', sky:'#1ba9cf', cyan:'#8ee6fb', gold:'#e8a317', orange:'#f37a1f', green:'#16a065', red:'#e0393e', grey:'#c7d3df'};
+function chartOK(){ return typeof Chart!=='undefined'; }
+function baseOpts(extra){
+  var o = { responsive:true, maintainAspectRatio:false, animation:{duration:350},
+    plugins:{ legend:{ rtl:S.lang==='ar', labels:{ font:{family:'Cairo',weight:'700'}, boxWidth:12, color:COL.navy } },
+      tooltip:{ rtl:S.lang==='ar', titleFont:{family:'Cairo'}, bodyFont:{family:'Cairo'} } },
+    scales:{ x:{ ticks:{font:{family:'Cairo'},color:'#64748b'}, grid:{color:'#eef3f7'} }, y:{ ticks:{font:{family:'Cairo'},color:'#64748b'}, grid:{color:'#eef3f7'}, beginAtZero:true } } };
+  return deepMerge(o, extra||{});
+}
+function deepMerge(a,b){ Object.keys(b).forEach(function(k){ if(b[k] && typeof b[k]==='object' && !Array.isArray(b[k]) && a[k] && typeof a[k]==='object') deepMerge(a[k],b[k]); else a[k]=b[k]; }); return a; }
+function mkChart(id, cfg){ if(!chartOK()) { var c=$('#'+id); if(c) c.parentNode.innerHTML='<div class="empty small">Charts need internet</div>'; return null; } var el=$('#'+id); if(!el) return null; var ch=new Chart(el, cfg); S.charts.push(ch); return ch; }
+function achChart(reps, pace){
+  var rs = reps.filter(function(r){ return r.salesTarget||r.collTarget||r.sales||r.coll; });
+  if(!rs.length){ var c=$('#c_ach'); if(c) c.parentNode.innerHTML='<div class="empty">'+t('noData')+'</div>'; return; }
+  $('#c_ach').parentNode.style.height = Math.max(260, rs.length*44+60)+'px';
+  mkChart('c_ach',{ type:'bar', data:{ labels:rs.map(function(r){return r.name;}), datasets:[
+    {label:t('sales')+' %', data:rs.map(function(r){return pct(r.sales,r.salesTarget)||0;}), backgroundColor:COL.gold, borderRadius:6, barPercentage:.8},
+    {label:t('collection')+' %', data:rs.map(function(r){return pct(r.coll,r.collTarget)||0;}), backgroundColor:COL.sky, borderRadius:6, barPercentage:.8}
+  ]}, options: baseOpts({ indexAxis:'y', scales:{ x:{ suggestedMax:100, ticks:{ callback:function(v){return v+'%';} } }, y:{ position: S.lang==='ar'?'right':'left' } },
+    plugins:{ tooltip:{ callbacks:{ label:function(c){ return c.dataset.label+': '+c.raw+'%'; } } } } }) });
+}
+
+/* ---------------- drill-down details ---------------- */
+function openDetails(kind, rep, title){
+  var el = modal(title||t('details'), '<div class="loading"><span class="spin"></span></div>');
+  call('details',{kind:kind, rep:rep, month:S.month, day:S.day}).then(function(d){
+    var box=$('.mc',el); if(!box) return;
+    box.innerHTML = detailsTable(kind, d.rows, !rep);
+    bindVisitRows(box, d.rows);
+  }).catch(function(e){ var box=$('.mc',el); if(box) box.innerHTML='<div class="empty">'+esc(errText(e))+'</div>'; });
+}
+function detailsTable(kind, rows, showRep){
+  if(!rows.length) return '<div class="empty">'+t('noData')+'</div>';
+  var h='<div class="tw" style="max-height:65vh"><table class="t">';
+  if(kind==='sales'||kind==='collection'){
+    var sum=0;
+    h+='<thead><tr><th>'+t('date')+'</th>'+(showRep?'<th>'+t('rep')+'</th>':'')+'<th>'+t('customer')+'</th><th>'+t('ref')+'</th><th class="n">'+t('amount')+'</th></tr></thead><tbody>';
+    rows.forEach(function(r){ sum+=r.amount; h+='<tr><td>'+dLabel(r.date)+'</td>'+(showRep?'<td>'+esc(r.repName)+'</td>':'')+'<td class="wrap">'+esc(r.client)+'</td><td>'+esc(r.ref)+'</td><td class="n"><b>'+money(r.amount)+'</b></td></tr>'; });
+    h+='<tr class="tot"><td colspan="'+(showRep?4:3)+'">'+t('total')+' ('+rows.length+')</td><td class="n">'+money(sum)+'</td></tr>';
+  } else if(kind==='clients'){
+    h+='<thead><tr><th>'+t('name')+'</th><th>'+t('area')+'</th><th>'+t('rep')+'</th><th>'+t('lastVisit')+'</th><th>'+t('pin')+'</th></tr></thead><tbody>';
+    rows.forEach(function(c){ h+='<tr><td class="wrap"><b>'+esc(c.name)+'</b></td><td>'+esc(c.area)+'</td><td>'+esc(c.repName)+'</td><td>'+(c.lastVisit?dLabel(c.lastVisit):'<span class="mut">'+t('never')+'</span>')+'</td><td>'+(c.map?'<a href="'+esc(c.map)+'" target="_blank" rel="noopener">'+t('openMap')+'</a>':'')+'</td></tr>'; });
+  } else {
+    h+=visitHead(showRep)+'<tbody>'+rows.map(function(v,i){ return visitRow(v,i,showRep); }).join('');
+  }
+  return h+'</tbody></table></div><div class="small mut" style="margin-top:8px">'+rows.length+'</div>';
+}
+function visitHead(showRep){ var mgr=S.me.role==='manager'; return '<thead><tr><th>'+t('date')+'</th><th>'+t('time')+'</th>'+(showRep?'<th>'+t('rep')+'</th>':'')+'<th>'+t('customer')+'</th><th>'+t('area')+'</th><th>'+t('person')+'</th><th>'+t('mobile')+'</th>'+(mgr?'<th>'+t('flags')+'</th><th class="n">'+t('distance')+'</th>':'')+'<th>'+t('pin')+'</th></tr></thead>'; }
+function tagsHtml(v){ if(!v.tags) return v.flag?'<span class="tag">!</span>':'<span class="ok">✓</span>'; return v.tags.split(/\s+/).filter(Boolean).map(function(x){ var strong=['MOCK','FAR','FROZEN','TELEPORT','ROUND','BURST','DUP'].indexOf(x)>=0; var lb=t('tag_'+x); if(lb.indexOf('tag_')===0) lb=x.replace(/_/g,' '); return '<span class="tag'+(strong?'':' note')+'">'+esc(lb)+'</span>'; }).join('')+(v.flag?'':' <span class="ok">✓</span>'); }
+function visitRow(v,i,showRep){
+  var mgr=S.me.role==='manager';
+  return '<tr data-vi="'+i+'" style="cursor:pointer'+(mgr&&v.flag?';background:#fff7f7':'')+'"><td>'+dLabel(v.date)+'</td><td>'+esc(v.time)+'</td>'+(showRep?'<td>'+esc(v.repName)+'</td>':'')+
+   '<td class="wrap"><b>'+esc(v.client)+'</b></td><td>'+esc(v.area)+'</td><td>'+esc(v.person)+'</td><td dir="ltr">'+esc(v.mobile)+'</td>'+
+   (mgr?'<td class="wrap">'+tagsHtml(v)+'</td><td class="n">'+(v.dist==null?'—':fmt(v.dist)+' m')+'</td>':'')+
+   '<td>'+(v.lat!=null?'<a href="https://www.google.com/maps?q='+v.lat+','+v.lon+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+t('openMap')+'</a>':'')+'</td></tr>';
+}
+function bindVisitRows(box, rows){ $$('tr[data-vi]',box).forEach(function(tr){ tr.onclick=function(){ visitModal(rows[+tr.getAttribute('data-vi')]); }; }); }
+function visitModal(v){
+  var mgr=S.me.role==='manager';
+  var line=function(k,val){ return '<tr><td class="mut">'+k+'</td><td class="wrap"><b>'+val+'</b></td></tr>'; };
+  var b='<div class="tw"><table class="t"><tbody>'+
+    line(t('date'), dLabel(v.date,true)+' · '+esc(v.time))+line(t('rep'), esc(v.repName))+line(t('customer'), esc(v.client)+' <span class="mut">('+esc(v.code)+')</span>')+
+    line(t('area'), esc(v.area))+line(t('person'), esc(v.person))+line(t('mobile'), '<span dir="ltr">'+esc(v.mobile)+'</span>')+
+    (v.comment?line(t('notes'), esc(v.comment)):'')+
+    (mgr? line(t('flags'), tagsHtml(v))+line(t('distance'), v.dist==null?'—':fmt(v.dist)+' m')+line(t('accuracy'), v.acc==null?'—':'±'+fmt(v.acc)+' m')+line('Source', esc(v.src||'web')):'')+
+    line(t('pin'), v.lat!=null?'<a href="https://www.google.com/maps?q='+v.lat+','+v.lon+'" target="_blank" rel="noopener">'+v.lat.toFixed(6)+', '+v.lon.toFixed(6)+'</a>':'—')+
+   '</tbody></table></div>';
+  closeModal(); modal(t('visitDetails'), b, '', true);
+}
+
+/* ======================================================================
+   PAGE 1 — SUMMARY (rep: own data only)
+   ====================================================================== */
+function pgSummaryRep(){
+  S.day = addDays(todayStr(),-1);
+  call('summary',{month:S.month, day:S.day}).then(function(d){
+    var r = d.reps[0] || {sales:0,salesTarget:0,coll:0,collTarget:0,visitsMTD:0,visitsDay:0,clients:0,daysActive:0};
+    var pace = d.workDays? Math.round(d.workDaysDone/d.workDays*100):null;
+    var avg = d.workDaysDone? (r.visitsMTD/d.workDaysDone):0;
+    $('#view').innerHTML =
+    '<div class="ptitle"><h1>'+t('summary')+'</h1><div class="sp"></div><div class="tools"><select id="s_m" class="in-f" style="width:auto">'+monthOptions(S.month)+'</select></div></div>'+
+    '<div class="card" style="margin-bottom:14px;background:var(--grad);color:#fff;border:0"><div class="flex"><div>'+logo(46)+'</div><div><div style="font-size:19px;font-weight:800">'+esc(S.me.name)+'</div><div class="small" style="opacity:.9">'+mLabel(d.month)+' · '+t('pace')+': '+(pace===null?'—':pace+'%')+'</div></div>'+
+      '<button class="btn gold right" onclick="go(\'visits\')">'+IC.visits.replace('<svg','<svg width="18" height="18"')+' '+t('newVisit')+'</button></div></div>'+
+    '<div class="kpis">'+
+      kpi('gold','sales','', t('sales'), money(r.sales), t('target')+': '+money(r.salesTarget), pct(r.sales,r.salesTarget), pace)+
+      kpi('green','collection','', t('collection'), money(r.coll), t('target')+': '+money(r.collTarget), pct(r.coll,r.collTarget), pace)+
+      kpi('navy','visitsMTD','', t('visitsMTD'), fmt(r.visitsMTD), t('avgDaily')+': '+avg.toFixed(1))+
+      kpi('','visitsDay','', t('yesterday'), fmt(r.visitsDay), dLabel(d.day,true))+
+      kpi('','clients','', t('clientsN'), fmt(r.clients), '')+
+    '</div>'+
+    '<div class="card"><h2>'+t('dailyTrend')+'</h2><div class="chart"><canvas id="c_my"></canvas></div></div>';
+    $('#s_m').onchange=function(){ S.month=this.value; go('summary'); };
+    $$('[data-d]').forEach(function(b){ b.onclick=function(){ openDetails(b.getAttribute('data-d'), '', b.getAttribute('data-title')); }; });
+    var from=d.month+'-01', to=monthEnd(d.month); if(to>d.today) to=d.today;
+    call('visits',{from:from,to:to}).then(function(v){ trendChart('c_my', v, false); }).catch(function(){});
+  }).catch(fail);
+}
+
+/* ======================================================================
+   PAGE 2 — CUSTOMERS
+   ====================================================================== */
+var CF = { q:'', rep:'', area:'', loc:'' , limit:150};
+function pgCustomers(){
+  call('clients').then(function(d){ S.clients=d; renderCustomers(); }).catch(fail);
+}
+function renderCustomers(){
+  var d=S.clients, mgr=S.me.role==='manager';
+  var areas = uniq(d.clients.map(function(c){return c.area;}).filter(Boolean)).sort();
+  var html = '<div class="ptitle"><h1>'+t('customers')+'</h1><span class="pill">'+fmt(d.clients.length)+'</span><div class="sp"></div>'+
+     (mgr?'<div class="tools"><button class="btn gold" id="c_add">+ '+t('addCustomer')+'</button></div>':'')+'</div>'+
+   '<div class="card" style="margin-bottom:14px"><div class="row">'+
+     '<input id="c_q" class="in-f" placeholder="'+t('search')+'" value="'+esc(CF.q)+'">'+
+     (mgr?'<select id="c_rep" class="in-f"><option value="">'+t('allReps')+'</option>'+d.reps.map(function(r){return '<option value="'+esc(r.email)+'"'+(CF.rep===r.email?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select>':'')+
+     '<select id="c_area" class="in-f"><option value="">'+t('allAreas')+'</option>'+areas.map(function(a){return '<option'+(CF.area===a?' selected':'')+'>'+esc(a)+'</option>';}).join('')+'</select>'+
+     '<select id="c_loc" class="in-f"><option value="">'+t('location')+': —</option><option value="y"'+(CF.loc==='y'?' selected':'')+'>'+t('hasLoc')+'</option><option value="n"'+(CF.loc==='n'?' selected':'')+'>'+t('noLoc')+'</option></select>'+
+   '</div></div><div class="card" style="padding:0" id="c_list"></div>';
+  $('#view').innerHTML=html;
+  var upd=function(){ CF.q=$('#c_q').value; CF.rep=$('#c_rep')?$('#c_rep').value:''; CF.area=$('#c_area').value; CF.loc=$('#c_loc').value; CF.limit=150; listCustomers(); };
+  $('#c_q').oninput=upd; ['#c_rep','#c_area','#c_loc'].forEach(function(s){ if($(s)) $(s).onchange=upd; });
+  if($('#c_add')) $('#c_add').onclick=function(){ customerForm(null); };
+  listCustomers();
+}
+function uniq(a){ var s={},o=[]; a.forEach(function(x){ if(!s[x]){s[x]=1;o.push(x);} }); return o; }
+function listCustomers(){
+  var d=S.clients, mgr=S.me.role==='manager', q=norm(CF.q);
+  var rows=d.clients.filter(function(c){
+    if(CF.rep && c.rep!==CF.rep) return false;
+    if(CF.area && c.area!==CF.area) return false;
+    if(CF.loc==='y' && !c.hasLoc) return false; if(CF.loc==='n' && c.hasLoc) return false;
+    if(q && norm(c.name+' '+c.code+' '+c.area+' '+c.repName).indexOf(q)<0) return false;
+    return true;
+  });
+  var shown=rows.slice(0,CF.limit);
+  var h='<div class="tw" style="border:0"><table class="t"><thead><tr><th>'+t('name')+'</th><th>'+t('area')+'</th>'+(mgr?'<th>'+t('rep')+'</th>':'')+'<th>'+t('location')+'</th><th>'+t('lastVisit')+'</th>'+(mgr?'<th></th>':'')+'</tr></thead><tbody>';
+  shown.forEach(function(c){
+    h+='<tr><td class="wrap"><b>'+esc(c.name)+'</b><div class="small mut">'+esc(c.code)+'</div></td><td>'+esc(c.area)+'</td>'+(mgr?'<td>'+esc(c.repName)+'</td>':'')+
+      '<td><span class="dot'+(c.hasLoc?' on':'')+'"></span> '+(c.map?'<a href="'+esc(c.map)+'" target="_blank" rel="noopener">'+t('openMap')+'</a>':'<span class="mut small">'+t('noLoc')+'</span>')+'</td>'+
+      '<td>'+(c.lastVisit?dLabel(c.lastVisit):'<span class="mut small">'+t('never')+'</span>')+'</td>'+
+      (mgr?'<td><button class="btn ghost sm" data-ed="'+esc(c.code)+'">'+t('edit')+'</button></td>':'')+'</tr>';
+  });
+  h+='</tbody></table></div>';
+  if(!rows.length) h='<div class="empty">'+t('noData')+'</div>';
+  if(rows.length>shown.length) h+='<div style="padding:12px;text-align:center"><button class="btn ghost sm" id="c_more">'+t('showMore')+' ('+(rows.length-shown.length)+')</button></div>';
+  $('#c_list').innerHTML=h;
+  if($('#c_more')) $('#c_more').onclick=function(){ CF.limit+=300; listCustomers(); };
+  $$('[data-ed]').forEach(function(b){ b.onclick=function(){ var c=d.clients.filter(function(x){return x.code===b.getAttribute('data-ed');})[0]; customerForm(c); }; });
+}
+function customerForm(c){
+  var d=S.clients, isNew=!c; c=c||{name:'',map:'',rep:CF.rep||'',area:''};
+  var areas = uniq(d.clients.map(function(x){return x.area;}).filter(Boolean)).sort();
+  var body='<div class="fld"><label class="f">'+t('name')+' *</label><input id="cf_n" class="in-f" value="'+esc(c.name)+'"></div>'+
+   '<div class="fld"><label class="f">'+t('mapLink')+'</label><input id="cf_m" class="in-f" dir="ltr" placeholder="https://maps.app.goo.gl/..." value="'+esc(isNew?'':(c.map||''))+'"><div class="small mut" style="margin-top:4px">'+t('mapHelp')+'</div></div>'+
+   '<div class="row"><div class="fld"><label class="f">'+t('assignedTo')+' *</label><select id="cf_r" class="in-f"><option value=""></option>'+d.reps.map(function(r){return '<option value="'+esc(r.email)+'"'+(c.rep===r.email?' selected':'')+'>'+esc(r.name)+(r.active?'':' ('+t('disabled')+')')+'</option>';}).join('')+'</select></div>'+
+   '<div class="fld"><label class="f">'+t('area')+'</label><input id="cf_a" class="in-f" list="cf_al" value="'+esc(c.area)+'"><datalist id="cf_al">'+areas.map(function(a){return '<option value="'+esc(a)+'">';}).join('')+'</datalist></div></div>'+
+   '<div class="err-line" id="cf_e"></div>';
+  var foot=(isNew?'':'<button class="btn red" id="cf_del">'+t('del')+'</button><span style="flex:1"></span>')+'<button class="btn ghost" onclick="closeModal()">'+t('cancel')+'</button><button class="btn gold" id="cf_s">'+t('save')+'</button>';
+  modal(isNew?t('addCustomer'):t('editCustomer'), body, foot, true);
+  $('#cf_s').onclick=function(){
+    var x={code:isNew?'':c.code, name:$('#cf_n').value, map:$('#cf_m').value.trim(), rep:$('#cf_r').value, area:$('#cf_a').value};
+    $('#cf_n').classList.toggle('err',!x.name.trim()); $('#cf_r').classList.toggle('err',!x.rep);
+    if(!x.name.trim()){ $('#cf_e').textContent=t('e_NAME_REQUIRED'); return; }
+    if(!x.rep){ $('#cf_e').textContent=t('e_REP_REQUIRED'); return; }
+    this.disabled=true;
+    call('saveClient',{client:x}).then(function(saved){
+      closeModal(); toast(x.map? (saved.locFound?t('locFound'):t('locNotFound')) : t('saved'), x.map&&!saved.locFound?'':'good');
+      pgCustomers();
+    }).catch(function(e){ $('#cf_e').textContent=errText(e); $('#cf_s').disabled=false; });
+  };
+  if($('#cf_del')) $('#cf_del').onclick=function(){ if(!confirm(t('confirmDelCustomer'))) return; call('deleteClient',{code:c.code}).then(function(){ closeModal(); toast(t('customerDeleted')); pgCustomers(); }).catch(function(e){ $('#cf_e').textContent=errText(e); }); };
+}
+
+/* ======================================================================
+   PAGE 3 — VISITS (manager analytics)
+   ====================================================================== */
+var VF = { preset:'thisMonth', from:'', to:'', rep:'', q:'', fakeOnly:false, limit:100, trendRep:'' };
+function presetRange(p){
+  var td=todayStr(), m=td.slice(0,7);
+  if(p==='today') return [td,td];
+  if(p==='yesterday'){ var y=addDays(td,-1); return [y,y]; }
+  if(p==='lastMonth'){ var lm=addDays(m+'-01',-1).slice(0,7); return [lm+'-01', monthEnd(lm)]; }
+  if(p==='custom') return [VF.from||m+'-01', VF.to||td];
+  return [m+'-01', td];
+}
+function pgVisitsMgr(){
+  var rg=presetRange(VF.preset); VF.from=rg[0]; VF.to=rg[1];
+  call('visits',{from:VF.from, to:VF.to, rep:VF.rep}).then(function(d){ S.vdata=d; renderVisitsMgr(); }).catch(fail);
+}
+function workDaysIn(from,to,weekend){ var wk=String(weekend||'').split(','), n=0, td=todayStr(); for(var d=from; d<=to && d<=td; d=addDays(d,1)){ var dow=new Date(d+'T12:00:00Z').getUTCDay(); if(wk.indexOf(String(dow))<0) n++; } return n; }
+function renderVisitsMgr(){
+  var d=S.vdata, V=d.visits, wd=workDaysIn(d.from,d.to,d.weekend)||1;
+  var fake=V.filter(function(v){return v.flag;}).length;
+  var activeReps=uniq(V.map(function(v){return v.rep;})).length;
+  var covered=uniq(V.map(function(v){return v.code;})).length;
+  var assigned=d.reps.reduce(function(s,r){ return s+(VF.rep && r.email!==VF.rep?0:r.assigned); },0);
+  var presets=['thisMonth','lastMonth','today','yesterday','custom'];
+  var html='<div class="ptitle"><h1>'+t('visits')+'</h1><div class="sp"></div><div class="tools">'+
+    '<div class="seg" id="v_pre">'+presets.map(function(p){return '<button data-p="'+p+'" class="'+(VF.preset===p?'on':'')+'">'+t(p)+'</button>';}).join('')+'</div>'+
+  '</div></div>'+
+  '<div class="card" style="margin-bottom:14px"><div class="row">'+
+    '<div><label class="f">'+t('from')+'</label><input type="date" id="v_f" class="in-f" value="'+d.from+'"></div>'+
+    '<div><label class="f">'+t('to')+'</label><input type="date" id="v_t" class="in-f" value="'+d.to+'"></div>'+
+    '<div><label class="f">'+t('rep')+'</label><select id="v_r" class="in-f"><option value="">'+t('allReps')+'</option>'+d.reps.map(function(r){return '<option value="'+esc(r.email)+'"'+(VF.rep===r.email?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select></div>'+
+  '</div></div>'+
+  '<div class="kpis">'+
+    statCard('navy',t('totalVisits'),fmt(V.length), wd+' '+t('workDays'))+
+    statCard('gold',t('avgDaily'),(V.length/wd).toFixed(1), activeReps? t('perWorkDay')+' · '+(V.length/wd/activeReps).toFixed(1)+' / '+t('rep') : t('perWorkDay'))+
+    statCard('',t('activeReps'),fmt(activeReps), t('reps')+': '+d.reps.length)+
+    statCard('green',t('covered'),fmt(covered), assigned? t('coverage')+': '+Math.round(covered/assigned*100)+'%':'')+
+    statCard('red',t('fakeVisits'),fmt(fake), V.length? Math.round(fake/V.length*100)+'%':'')+
+  '</div>'+
+  '<div class="g2" style="margin-bottom:14px">'+
+    '<div class="card"><h2>'+t('dailyTrend')+'</h2><div class="chart"><canvas id="c_daily"></canvas></div></div>'+
+    '<div class="card"><div class="flex" style="margin-bottom:8px"><h2 style="margin:0">'+t('repTrend')+'</h2><select id="v_tr" class="in-f right" style="width:auto">'+d.reps.map(function(r){return '<option value="'+esc(r.email)+'"'+((VF.trendRep||VF.rep||(d.reps[0]&&d.reps[0].email))===r.email?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select></div><div class="chart"><canvas id="c_rep"></canvas></div></div>'+
+  '</div>'+
+  '<div class="card" style="margin-bottom:14px"><h2>'+t('byRepChart')+'</h2><div class="chart tall"><canvas id="c_byrep"></canvas></div><div style="height:14px"></div>'+repStatsTable(d,wd)+'</div>'+
+  '<div class="g2" style="margin-bottom:14px">'+
+    '<div class="card"><h2>'+t('byHour')+'</h2><div class="chart"><canvas id="c_hour"></canvas></div></div>'+
+    '<div class="card"><h2>'+t('byArea')+'</h2><div class="chart"><canvas id="c_area"></canvas></div></div>'+
+  '</div>'+
+  '<div class="card"><div class="flex" style="margin-bottom:10px"><h2 style="margin:0">'+t('visitList')+'</h2>'+
+     '<input id="v_q" class="in-f" style="max-width:260px" placeholder="'+t('search')+'" value="'+esc(VF.q)+'">'+
+     '<label class="flex small" style="gap:6px;font-weight:700"><span class="switch"><input type="checkbox" id="v_fk"'+(VF.fakeOnly?' checked':'')+'><span></span></span>'+t('fakeOnly')+'</label></div>'+
+     '<div id="v_list"></div></div>';
+  $('#view').innerHTML=html;
+  $$('#v_pre button').forEach(function(b){ b.onclick=function(){ VF.preset=b.getAttribute('data-p'); if(VF.preset!=='custom'){VF.from='';VF.to='';} pgVisitsMgr(); }; });
+  $('#v_f').onchange=$('#v_t').onchange=function(){ VF.preset='custom'; VF.from=$('#v_f').value; VF.to=$('#v_t').value; pgVisitsMgr(); };
+  $('#v_r').onchange=function(){ VF.rep=this.value; VF.trendRep=this.value||VF.trendRep; pgVisitsMgr(); };
+  $('#v_tr').onchange=function(){ VF.trendRep=this.value; repTrendChart(); };
+  $('#v_q').oninput=function(){ VF.q=this.value; VF.limit=100; listVisits(); };
+  $('#v_fk').onchange=function(){ VF.fakeOnly=this.checked; VF.limit=100; listVisits(); };
+  $$('[data-rf]').forEach(function(b){ b.onclick=function(){ VF.rep=b.getAttribute('data-rf'); VF.trendRep=VF.rep; pgVisitsMgr(); }; });
+  trendChart('c_daily', d, true); repTrendChart(); byRepChart(d); hourChart(d); areaChart(d); listVisits();
+}
+function statCard(color,label,value,sub){ return '<div class="kpi '+color+'" style="cursor:default"><div class="l">'+esc(label)+'</div><div class="v">'+value+'</div><div class="s">'+esc(sub||'')+'</div></div>'; }
+function repStats(d){
+  var m={}; d.reps.forEach(function(r){ m[r.email]={email:r.email,name:r.name,assigned:r.assigned,n:0,fake:0,days:{},cl:{}}; });
+  d.visits.forEach(function(v){ var r=m[v.rep]||(m[v.rep]={email:v.rep,name:v.repName,assigned:0,n:0,fake:0,days:{},cl:{}}); r.n++; if(v.flag) r.fake++; r.days[v.date]=1; r.cl[v.code]=1; });
+  return Object.keys(m).map(function(k){ var r=m[k]; r.daysN=Object.keys(r.days).length; r.clN=Object.keys(r.cl).length; return r; })
+    .filter(function(r){ return !VF.rep || r.email===VF.rep; }).sort(function(a,b){ return b.n-a.n; });
+}
+function repStatsTable(d,wd){
+  var rs=repStats(d);
+  var h='<div class="tw"><table class="t"><thead><tr><th class="sticky">'+t('rep')+'</th><th class="n">'+t('visitsN')+'</th><th class="n">'+t('fake')+'</th><th class="n">%</th><th class="n">'+t('avgDay')+'</th><th class="n">'+t('daysActive')+'</th><th class="n">'+t('covered')+'</th><th>'+t('coverage')+'</th></tr></thead><tbody>';
+  rs.forEach(function(r){ var cov=pct(r.clN,r.assigned);
+    h+='<tr><td class="sticky"><button class="num" data-rf="'+esc(r.email)+'">'+esc(r.name)+'</button></td><td class="n"><b>'+fmt(r.n)+'</b></td><td class="n">'+(r.fake?'<b style="color:var(--red)">'+r.fake+'</b>':'<span class="mut">0</span>')+'</td>'+
+      '<td class="n">'+(r.n?Math.round(r.fake/r.n*100)+'%':'—')+'</td><td class="n">'+(r.n/wd).toFixed(1)+'</td><td class="n">'+r.daysN+' / '+wd+'</td><td class="n">'+r.clN+' / '+r.assigned+'</td>'+
+      '<td><span class="minibar">'+bar(cov)+'</span> '+(cov===null?'':'<span class="small">'+cov+'%</span>')+'</td></tr>'; });
+  return h+'</tbody></table></div>';
+}
+function dayList(from,to){ var o=[], td=todayStr(); for(var d=from; d<=to && d<=td; d=addDays(d,1)) o.push(d); return o; }
+function trendChart(id, d, withFake){
+  var days=dayList(d.from,d.to), tot={}, fk={};
+  d.visits.forEach(function(v){ tot[v.date]=(tot[v.date]||0)+1; if(v.flag) fk[v.date]=(fk[v.date]||0)+1; });
+  var ds=[{label:t('visitsN'), data:days.map(function(x){return tot[x]||0;}), borderColor:COL.blue, backgroundColor:'rgba(27,169,207,.15)', fill:true, tension:.3, pointRadius:3, pointBackgroundColor:COL.blue}];
+  if(withFake) ds.push({label:t('fake'), data:days.map(function(x){return fk[x]||0;}), borderColor:COL.red, backgroundColor:COL.red, tension:.3, pointRadius:2});
+  mkChart(id,{type:'line', data:{labels:days.map(function(x){return dLabel(x);}), datasets:ds}, options:baseOpts()});
+}
+function repTrendChart(){
+  var d=S.vdata, rep=$('#v_tr')?$('#v_tr').value:''; if(!rep) return;
+  var days=dayList(d.from,d.to), mine={}, all={}, reps=uniq(d.visits.map(function(v){return v.rep;})).length||1;
+  d.visits.forEach(function(v){ all[v.date]=(all[v.date]||0)+1; if(v.rep===rep) mine[v.date]=(mine[v.date]||0)+1; });
+  S.charts=S.charts.filter(function(c){ if(c.canvas && c.canvas.id==='c_rep'){ c.destroy(); return false;} return true; });
+  var rn=(d.reps.filter(function(r){return r.email===rep;})[0]||{}).name||rep;
+  mkChart('c_rep',{type:'line', data:{labels:days.map(function(x){return dLabel(x);}), datasets:[
+    {label:rn, data:days.map(function(x){return mine[x]||0;}), borderColor:COL.gold, backgroundColor:'rgba(232,163,23,.18)', fill:true, tension:.3, pointRadius:3, pointBackgroundColor:COL.gold},
+    {label:t('teamAvg'), data:days.map(function(x){return +((all[x]||0)/reps).toFixed(1);}), borderColor:COL.navy, borderDash:[6,5], pointRadius:0, tension:.3}
+  ]}, options:baseOpts()});
+}
+function byRepChart(d){
+  var rs=repStats(d).filter(function(r){return r.n;});
+  if(!rs.length){ $('#c_byrep').parentNode.innerHTML='<div class="empty">'+t('noData')+'</div>'; return; }
+  $('#c_byrep').parentNode.style.height=Math.max(240, rs.length*34+60)+'px';
+  mkChart('c_byrep',{type:'bar', data:{labels:rs.map(function(r){return r.name;}), datasets:[
+    {label:t('clean'), data:rs.map(function(r){return r.n-r.fake;}), backgroundColor:COL.sky, borderRadius:5},
+    {label:t('fake'), data:rs.map(function(r){return r.fake;}), backgroundColor:COL.red, borderRadius:5}
+  ]}, options:baseOpts({indexAxis:'y', scales:{x:{stacked:true}, y:{stacked:true, position:S.lang==='ar'?'right':'left'}}})});
+}
+function hourChart(d){
+  var h=new Array(24).fill(0); d.visits.forEach(function(v){ var x=parseInt(String(v.time).slice(0,2),10); if(!isNaN(x)) h[x]++; });
+  var lo=6, hi=23; for(var i=0;i<24;i++){ if(h[i]){ lo=Math.min(lo,i); hi=Math.max(hi,i);} }
+  var labels=[], data=[]; for(i=lo;i<=hi;i++){ labels.push(p2(i)+':00'); data.push(h[i]); }
+  mkChart('c_hour',{type:'bar', data:{labels:labels, datasets:[{label:t('visitsN'), data:data, backgroundColor:COL.blue, borderRadius:5}]}, options:baseOpts({plugins:{legend:{display:false}}})});
+}
+function areaChart(d){
+  var m={}; d.visits.forEach(function(v){ var a=v.area||'—'; m[a]=(m[a]||0)+1; });
+  var arr=Object.keys(m).map(function(k){return [k,m[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  if(!arr.length){ $('#c_area').parentNode.innerHTML='<div class="empty">'+t('noData')+'</div>'; return; }
+  mkChart('c_area',{type:'bar', data:{labels:arr.map(function(x){return x[0];}), datasets:[{label:t('visitsN'), data:arr.map(function(x){return x[1];}), backgroundColor:[COL.gold,COL.sky,COL.blue,COL.orange,COL.navy,COL.green,COL.cyan,'#9b8cf5','#f59bb6','#7fd1ae'], borderRadius:5}]},
+    options:baseOpts({indexAxis:'y', plugins:{legend:{display:false}}, scales:{y:{position:S.lang==='ar'?'right':'left'}}})});
+}
+function listVisits(){
+  var d=S.vdata, q=norm(VF.q);
+  var rows=d.visits.filter(function(v){ if(VF.fakeOnly && !v.flag) return false; if(q && norm(v.client+' '+v.repName+' '+v.area+' '+v.person+' '+v.mobile+' '+v.code).indexOf(q)<0) return false; return true; });
+  var shown=rows.slice(0,VF.limit);
+  var box=$('#v_list');
+  if(!rows.length){ box.innerHTML='<div class="empty">'+t('noData')+'</div>'; return; }
+  box.innerHTML='<div class="tw" style="max-height:620px"><table class="t">'+visitHead(true)+'<tbody>'+shown.map(function(v,i){return visitRow(v,i,true);}).join('')+'</tbody></table></div>'+
+    '<div class="flex small mut" style="margin-top:8px"><span>'+shown.length+' / '+rows.length+'</span>'+(rows.length>shown.length?'<button class="btn ghost sm right" id="v_more">'+t('showMore')+'</button>':'')+'</div>';
+  bindVisitRows(box, shown);
+  if($('#v_more')) $('#v_more').onclick=function(){ VF.limit+=200; listVisits(); };
+}
+
+/* ======================================================================
+   PAGE 3 — VISITS (rep): new visit + search day
+   ====================================================================== */
+var NV = { code:'', gps:null, gpsState:'idle', day:'' };
+function pgVisitsRep(){
+  if(!NV.day) NV.day=todayStr();
+  var go2=function(){ renderVisitsRep(); };
+  if(S.clients) go2(); else call('clients').then(function(d){ S.clients=d; go2(); }).catch(fail);
+}
+function renderVisitsRep(){
+  $('#view').innerHTML=
+   '<div class="ptitle"><h1>'+t('visits')+'</h1></div>'+
+   '<div class="card" style="margin-bottom:16px;border-top:4px solid var(--gold)"><h2>'+t('newVisit')+'</h2>'+
+     '<div id="nv_alert"></div>'+
+     '<div class="fld"><label class="f">'+t('chooseCustomer')+' *</label><div id="nv_cb"></div></div>'+
+     '<div class="row"><div class="fld"><label class="f">'+t('personName')+' *</label><input id="nv_p" class="in-f" autocomplete="off"></div>'+
+     '<div class="fld"><label class="f">'+t('mobile')+' *</label><input id="nv_m" class="in-f" type="tel" inputmode="tel" dir="ltr" placeholder="05xxxxxxxx" autocomplete="off"></div></div>'+
+     '<div class="fld"><label class="f">'+t('notes')+'</label><textarea id="nv_c" class="in-f"></textarea></div>'+
+     '<div class="fld"><label class="f">'+t('location')+' *</label><div id="nv_loc"></div></div>'+
+     '<button class="btn gold big" id="nv_s">'+t('saveVisit')+'</button>'+
+   '</div>'+
+   '<div class="card"><div class="flex" style="margin-bottom:10px"><h2 style="margin:0">'+t('myVisits')+'</h2>'+
+     '<div class="seg right"><button data-dd="0">'+t('today')+'</button><button data-dd="-1">'+t('yesterday')+'</button></div>'+
+     '<input type="date" id="nv_day" class="in-f" style="width:auto" value="'+NV.day+'" max="'+todayStr()+'"></div>'+
+     '<div id="nv_list"><div class="loading"><span class="spin"></span></div></div></div>';
+  combo($('#nv_cb'), S.clients.clients, NV.code, function(code){ NV.code=code; $('#nv_alert').innerHTML=''; });
+  $('#nv_s').onclick=submitVisit;
+  $('#nv_day').onchange=function(){ if(this.value){ NV.day=this.value; loadMyDay(); } };
+  $$('[data-dd]').forEach(function(b){ b.onclick=function(){ NV.day=addDays(todayStr(), +b.getAttribute('data-dd')); $('#nv_day').value=NV.day; loadMyDay(); }; });
+  renderLoc(); getGps(); loadMyDay();
+}
+function loadMyDay(){
+  $$('[data-dd]').forEach(function(b){ b.classList.toggle('on', addDays(todayStr(), +b.getAttribute('data-dd'))===NV.day); });
+  call('visits',{from:NV.day,to:NV.day}).then(function(d){
+    var box=$('#nv_list'); if(!box) return;
+    if(!d.visits.length){ box.innerHTML='<div class="empty">'+t('noVisitsDay')+' — '+dLabel(NV.day,true)+'</div>'; return; }
+    box.innerHTML='<div class="small mut" style="margin-bottom:6px">'+dLabel(NV.day,true)+' · <b>'+d.visits.length+'</b> '+t('visitsN')+'</div><div class="tw"><table class="t">'+visitHead(false)+'<tbody>'+d.visits.map(function(v,i){return visitRow(v,i,false);}).join('')+'</tbody></table></div>';
+    bindVisitRows(box, d.visits);
+  }).catch(function(e){ var box=$('#nv_list'); if(box) box.innerHTML='<div class="empty">'+esc(errText(e))+'</div>'; });
+}
+/* searchable dropdown */
+function combo(host, list, value, onPick){
+  function draw(){
+    var c = list.filter(function(x){return x.code===value;})[0];
+    if(c){
+      host.innerHTML='<div class="picked"><div class="main"><b>'+esc(c.name)+'</b><div class="small mut">'+esc(c.area||'')+' · '+esc(c.code)+(c.map?' · <a href="'+esc(c.map)+'" target="_blank" rel="noopener">'+t('openMap')+'</a>':'')+'</div></div><button class="btn ghost sm" type="button">'+t('change')+'</button></div>';
+      $('button',host).onclick=function(){ value=''; onPick(''); draw(); var i=$('input',host); if(i) i.focus(); };
+      return;
+    }
+    host.innerHTML='<div class="cb"><input class="in-f" type="search" autocomplete="off" placeholder="'+t('pickCustomer')+'"><div class="list hide"></div></div>';
+    var inp=$('input',host), box=$('.list',host), hl=0, cur=[];
+    function filter(){
+      var q=norm(inp.value);
+      cur=list.filter(function(x){ return !q || norm(x.name+' '+x.code+' '+x.area).indexOf(q)>=0; }).slice(0,60);
+      hl=0;
+      box.innerHTML = cur.length? cur.map(function(x,i){ return '<div class="opt'+(i===hl?' hl':'')+'" data-i="'+i+'"><b>'+esc(x.name)+'</b><span>'+esc(x.area||'')+' · '+esc(x.code)+'</span></div>'; }).join('') : '<div class="empty small">'+t('noData')+'</div>';
+      box.classList.remove('hide');
+      $$('.opt',box).forEach(function(o){
+        o.onmousedown=function(e){ e.preventDefault(); };          // keep the list open while tapping
+        o.onclick=function(){ pick(cur[+o.getAttribute('data-i')]); };
+      });
+    }
+    function pick(x){ if(!x) return; value=x.code; onPick(x.code); draw(); }
+    inp.onfocus=filter; inp.oninput=filter;
+    inp.onblur=function(){ setTimeout(function(){ if(box.isConnected) box.classList.add('hide'); },250); };
+    inp.onkeydown=function(e){
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); hl=Math.max(0,Math.min(cur.length-1,hl+(e.key==='ArrowDown'?1:-1))); $$('.opt',box).forEach(function(o,i){o.classList.toggle('hl',i===hl); if(i===hl) o.scrollIntoView({block:'nearest'});}); }
+      if(e.key==='Enter'){ e.preventDefault(); pick(cur[hl]); }
+    };
+  }
+  draw();
+}
+/* location */
+function renderLoc(){
+  var el=$('#nv_loc'); if(!el) return;
+  var g=NV.gps, st=NV.gpsState;
+  if(st==='getting') el.innerHTML='<div class="loc"><span class="spin"></span><span>'+t('locGetting')+'</span></div>';
+  else if(st==='ok') el.innerHTML='<div class="loc ok"><span>✓</span><span>'+t('locReady')+(g.accuracy?' · ±'+Math.round(g.accuracy)+' m':'')+'</span><span class="sp"></span><button class="btn ghost sm" type="button" id="nv_rl">'+t('retry')+'</button></div>';
+  else el.innerHTML='<div class="loc bad"><span>⚠</span><span>'+t('locOff')+'</span><span class="sp"></span><button class="btn gold sm" type="button" id="nv_rl">'+t('retry')+'</button></div>';
+  if($('#nv_rl')) $('#nv_rl').onclick=function(){ getGps(); };
+}
+function getGps(){
+  NV.gpsState='getting'; NV.gps=null; renderLoc();
+  var done=function(g){ NV.gps=g; NV.gpsState=g?'ok':'bad'; renderLoc(); if(g && $('#nv_alert') && $('#nv_alert').innerHTML) validateVisit(true); };
+  if(window.AndroidGPS && AndroidGPS.requestLocation){
+    try{ AndroidGPS.requestLocation(); }catch(e){ return done(null); }
+    var n=0, iv=setInterval(function(){
+      n++; var r=''; try{ r=AndroidGPS.pollResult(); }catch(e){}
+      if(r){ clearInterval(iv); try{ var o=JSON.parse(r); done(o.ok&&o.lat!=null?{lat:o.lat,lon:o.lon,accuracy:o.accuracy,altitude:o.altitude,mock:!!o.mock,source:'android'}:null); }catch(e){ done(null); } }
+      else if(n>60){ clearInterval(iv); done(null); }
+    },300);
+    return;
+  }
+  if(!navigator.geolocation) return done(null);
+  navigator.geolocation.getCurrentPosition(function(p){
+    done({lat:p.coords.latitude, lon:p.coords.longitude, accuracy:p.coords.accuracy, altitude:p.coords.altitude, mock:false, source:'web'});
+  }, function(){ done(null); }, {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+}
+function validateVisit(quiet){
+  var miss=[], p=$('#nv_p').value.trim(), m=$('#nv_m').value.replace(/[\s-]/g,'');
+  if(!NV.code) miss.push('CUSTOMER');
+  if(!p) miss.push('PERSON');
+  if(!m) miss.push('MOBILE'); else if(!/^\+?\d{8,15}$/.test(m)) miss.push('MOBILE_BAD');
+  if(!NV.gps) miss.push('LOCATION');
+  $('#nv_p').classList.toggle('err', miss.indexOf('PERSON')>=0);
+  $('#nv_m').classList.toggle('err', miss.indexOf('MOBILE')>=0||miss.indexOf('MOBILE_BAD')>=0);
+  var ci=$('#nv_cb input'); if(ci) ci.classList.toggle('err', miss.indexOf('CUSTOMER')>=0);
+  showMissing(miss);
+  return miss;
+}
+function showMissing(miss){
+  var a=$('#nv_alert'); if(!a) return;
+  a.innerHTML = miss.length? '<div class="alert"><b>⚠ '+t('completeTitle')+'</b><ul>'+miss.map(function(k){return '<li>'+t('miss_'+k)+'</li>';}).join('')+'</ul></div>' : '';
+  if(miss.length) a.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function submitVisit(){
+  var miss=validateVisit();
+  if(miss.length){ if(miss.indexOf('LOCATION')>=0 && NV.gpsState!=='getting') getGps(); return; }
+  var btn=$('#nv_s'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  var g=NV.gps;
+  call('saveVisit',{visit:{code:NV.code, person:$('#nv_p').value.trim(), mobile:$('#nv_m').value.trim(), comment:$('#nv_c').value.trim(),
+    lat:g.lat, lon:g.lon, accuracy:g.accuracy, altitude:g.altitude, mock:g.mock, source:g.source}})
+  .then(function(){
+    toast(t('visitSaved'),'good');
+    NV.code=''; NV.day=todayStr(); renderVisitsRep();
+  }).catch(function(e){
+    btn.disabled=false; btn.textContent=t('saveVisit');
+    if(e.code==='VISIT_MISSING' && e.msg) showMissing(e.msg.split(','));
+    else toast(errText(e),'bad');
+  });
+}
+
+/* ======================================================================
+   PAGE 4 — SETTINGS
+   ====================================================================== */
+var ST = { tab:'' , tmonth:'', smonth:''};
+function pgSettings(){
+  var mgr=S.me.role==='manager';
+  var tabs = mgr? ['users','targets','salesColl','system','myAccount'] : ['myAccount'];
+  if(tabs.indexOf(ST.tab)<0) ST.tab=tabs[0];
+  $('#view').innerHTML='<div class="ptitle"><h1>'+t('settings')+'</h1></div>'+
+    (tabs.length>1?'<div class="subtabs">'+tabs.map(function(x){return '<button data-st="'+x+'" class="'+(ST.tab===x?'on':'')+'">'+t(x)+'</button>';}).join('')+'</div>':'')+
+    '<div id="st_body"><div class="loading"><span class="spin"></span></div></div>';
+  $$('[data-st]').forEach(function(b){ b.onclick=function(){ ST.tab=b.getAttribute('data-st'); pgSettings(); }; });
+  ({users:stUsers, targets:stTargets, salesColl:stSales, system:stSystem, myAccount:stAccount})[ST.tab]();
+}
+function stUsers(){
+  call('users').then(function(list){
+    var h='<div class="card"><div class="flex" style="margin-bottom:12px"><h2 style="margin:0">'+t('users')+'</h2><button class="btn gold right" id="u_add">+ '+t('addUser')+'</button></div>'+
+      '<div class="tw"><table class="t"><thead><tr><th>'+t('name')+'</th><th>'+t('email')+'</th><th>'+t('role')+'</th><th>'+t('active')+'</th><th class="n">'+t('clientsN')+'</th><th></th></tr></thead><tbody>'+
+      list.map(function(u,i){ return '<tr><td><b>'+esc(u.name)+'</b>'+(u.defaultPw?' <span class="pill mid">'+t('defaultPw')+'</span>':'')+'</td><td dir="ltr">'+esc(u.email)+'</td>'+
+        '<td><span class="pill '+(u.role==='manager'?'':'grey')+'">'+(u.role==='manager'?t('roleMgr'):t('roleRep'))+'</span></td>'+
+        '<td><label class="switch"><input type="checkbox" data-act="'+i+'"'+(u.active?' checked':'')+(u.email===S.me.email?' disabled':'')+'><span></span></label></td>'+
+        '<td class="n">'+u.clients+'</td>'+
+        '<td><div class="flex" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost sm" data-ue="'+i+'">'+t('edit')+'</button><button class="btn ghost sm" data-ur="'+i+'">'+t('resetPw')+'</button></div></td></tr>'; }).join('')+
+      '</tbody></table></div></div>';
+    $('#st_body').innerHTML=h;
+    $('#u_add').onclick=function(){ userForm(null); };
+    $$('[data-ue]').forEach(function(b){ b.onclick=function(){ userForm(list[+b.getAttribute('data-ue')]); }; });
+    $$('[data-ur]').forEach(function(b){ b.onclick=function(){ var u=list[+b.getAttribute('data-ur')]; if(!confirm(t('confirmReset')+'\n'+u.name)) return; call('resetPassword',{email:u.email}).then(function(){ toast(t('resetDone'),'good'); stUsers(); }).catch(function(e){ toast(errText(e),'bad'); }); }; });
+    $$('[data-act]').forEach(function(c){ c.onchange=function(){ var u=list[+c.getAttribute('data-act')]; var x=Object.assign({},u,{originalEmail:u.email, active:c.checked}); call('saveUser',{user:x}).then(function(){ toast(t('saved'),'good'); }).catch(function(e){ toast(errText(e),'bad'); c.checked=!c.checked; }); }; });
+  }).catch(fail);
+}
+function userForm(u){
+  var isNew=!u; u=u||{email:'',name:'',role:'rep',active:true,area:'',phone:''};
+  var body='<div class="fld"><label class="f">'+t('name')+' *</label><input id="uf_n" class="in-f" value="'+esc(u.name)+'"></div>'+
+    '<div class="fld"><label class="f">'+t('email')+' *</label><input id="uf_e" class="in-f" dir="ltr" value="'+esc(u.email)+'"></div>'+
+    '<div class="row"><div class="fld"><label class="f">'+t('role')+'</label><select id="uf_r" class="in-f"><option value="rep"'+(u.role==='rep'?' selected':'')+'>'+t('roleRep')+'</option><option value="manager"'+(u.role==='manager'?' selected':'')+'>'+t('roleMgr')+'</option></select></div>'+
+    '<div class="fld"><label class="f">'+t('phone')+'</label><input id="uf_p" class="in-f" dir="ltr" value="'+esc(u.phone)+'"></div></div>'+
+    '<label class="flex" style="font-weight:700"><span class="switch"><input type="checkbox" id="uf_a"'+(u.active?' checked':'')+'><span></span></span>'+t('active')+'</label>'+
+    (isNew?'<div class="hint" style="margin-top:12px">'+t('password')+': <b dir="ltr">000000</b></div>':'')+
+    '<div class="err-line" id="uf_m"></div>';
+  var foot=(isNew?'':'<button class="btn red" id="uf_d">'+t('del')+'</button><span style="flex:1"></span>')+'<button class="btn ghost" onclick="closeModal()">'+t('cancel')+'</button><button class="btn gold" id="uf_s">'+t('save')+'</button>';
+  modal(isNew?t('addUser'):t('editUser'), body, foot, true);
+  $('#uf_s').onclick=function(){
+    var x={isNew:isNew, originalEmail:u.email, name:$('#uf_n').value, email:$('#uf_e').value, role:$('#uf_r').value, phone:$('#uf_p').value, active:$('#uf_a').checked};
+    this.disabled=true;
+    call('saveUser',{user:x}).then(function(){ closeModal(); toast(t('saved'),'good'); S.clients=null; stUsers(); }).catch(function(e){ $('#uf_m').textContent=errText(e); $('#uf_s').disabled=false; });
+  };
+  if($('#uf_d')) $('#uf_d').onclick=function(){ if(!confirm(t('confirmDelUser')+'\n'+u.name)) return; call('deleteUser',{email:u.email}).then(function(){ closeModal(); stUsers(); }).catch(function(e){ $('#uf_m').textContent=errText(e); }); };
+}
+function stTargets(){
+  if(!ST.tmonth) ST.tmonth=S.month;
+  call('targets',{month:ST.tmonth}).then(function(d){
+    var h='<div class="card"><div class="flex" style="margin-bottom:12px"><h2 style="margin:0">'+t('targets')+'</h2><select id="tg_m" class="in-f right" style="width:auto">'+monthOptions(d.month)+'</select></div>'+
+     '<div class="tw"><table class="t"><thead><tr><th>'+t('rep')+'</th><th>'+t('salesTarget')+'</th><th>'+t('collTarget')+'</th><th></th></tr></thead><tbody>'+
+     d.rows.map(function(r,i){ return '<tr><td><b>'+esc(r.name)+'</b>'+(r.active?'':' <span class="pill grey">'+t('disabled')+'</span>')+'</td>'+
+       '<td><input class="in-f" style="max-width:170px" inputmode="numeric" dir="ltr" data-ts="'+i+'" value="'+(r.sales||'')+'"></td>'+
+       '<td><input class="in-f" style="max-width:170px" inputmode="numeric" dir="ltr" data-tc="'+i+'" value="'+(r.collection||'')+'"></td>'+
+       '<td class="small mut">'+(r.from && r.from!==d.month? t('carried')+' '+mLabel(r.from):'')+'</td></tr>'; }).join('')+
+     '</tbody></table></div><div style="margin-top:14px;text-align:end"><button class="btn gold" id="tg_s">'+t('saveTargets')+'</button></div></div>';
+    $('#st_body').innerHTML=h;
+    $('#tg_m').onchange=function(){ ST.tmonth=this.value; stTargets(); };
+    $('#tg_s').onclick=function(){
+      var rows=d.rows.map(function(r,i){ return {email:r.email, sales:$('[data-ts="'+i+'"]').value, collection:$('[data-tc="'+i+'"]').value}; });
+      this.disabled=true;
+      call('saveTargets',{month:d.month, rows:rows}).then(function(){ toast(t('saved'),'good'); stTargets(); }).catch(function(e){ toast(errText(e),'bad'); $('#tg_s').disabled=false; });
+    };
+  }).catch(fail);
+}
+function stSales(){
+  if(!ST.smonth) ST.smonth=S.month;
+  Promise.all([call('sales',{month:ST.smonth}), call('users')]).then(function(res){
+    var d=res[0], reps=res[1].filter(function(u){return u.role==='rep';});
+    var tot={sales:0,collection:0}; d.rows.forEach(function(r){ tot[r.type]+=r.amount; });
+    var h='<div class="card" style="margin-bottom:14px"><h2>'+t('addEntry')+'</h2><div class="row">'+
+      '<div><label class="f">'+t('date')+'</label><input type="date" id="sa_d" class="in-f" value="'+todayStr()+'"></div>'+
+      '<div><label class="f">'+t('rep')+'</label><select id="sa_r" class="in-f"><option value=""></option>'+reps.map(function(r){return '<option value="'+esc(r.email)+'">'+esc(r.name)+'</option>';}).join('')+'</select></div>'+
+      '<div><label class="f">'+t('type')+'</label><select id="sa_t" class="in-f"><option value="sales">'+t('sales')+'</option><option value="collection">'+t('collection')+'</option></select></div>'+
+      '<div><label class="f">'+t('amount')+'</label><input id="sa_a" class="in-f" inputmode="decimal" dir="ltr"></div>'+
+      '<div><label class="f">'+t('customer')+'</label><input id="sa_c" class="in-f"></div>'+
+      '<div><label class="f">'+t('ref')+'</label><input id="sa_f" class="in-f" dir="ltr"></div>'+
+     '</div><div class="flex" style="margin-top:12px"><span class="err-line" id="sa_m"></span><button class="btn gold right" id="sa_s">'+t('add')+'</button></div></div>'+
+     '<div class="card" style="margin-bottom:14px"><h2>'+t('pasteImport')+'</h2><div class="hint" style="margin-bottom:10px">'+t('pasteHelp')+'</div>'+
+       '<textarea id="sa_p" class="in-f" dir="ltr" style="min-height:110px;font-family:monospace" placeholder="2026-10-28\trep@email.com\tSales\t12500\tCustomer name\tINV-123"></textarea>'+
+       '<div class="flex" style="margin-top:10px"><span id="sa_pm" class="small"></span><button class="btn blue right" id="sa_pi">'+t('importBtn')+'</button></div></div>'+
+     '<div class="card"><div class="flex" style="margin-bottom:12px"><h2 style="margin:0">'+t('salesColl')+'</h2><span class="pill">'+t('sales')+': '+money(tot.sales)+'</span><span class="pill good">'+t('collection')+': '+money(tot.collection)+'</span><select id="sa_mo" class="in-f right" style="width:auto">'+monthOptions(d.month)+'</select></div>'+
+      (d.rows.length?'<div class="tw" style="max-height:520px"><table class="t"><thead><tr><th>'+t('date')+'</th><th>'+t('rep')+'</th><th>'+t('type')+'</th><th>'+t('customer')+'</th><th>'+t('ref')+'</th><th class="n">'+t('amount')+'</th><th></th></tr></thead><tbody>'+
+      d.rows.map(function(r){ return '<tr><td>'+dLabel(r.date)+'</td><td>'+esc(r.repName)+'</td><td><span class="pill '+(r.type==='collection'?'good':'')+'">'+t(r.type)+'</span></td><td class="wrap">'+esc(r.client)+'</td><td>'+esc(r.ref)+'</td><td class="n"><b>'+money(r.amount)+'</b></td><td><button class="btn red sm" data-sd="'+esc(r.id)+'">×</button></td></tr>'; }).join('')+
+      '</tbody></table></div>':'<div class="empty">'+t('noData')+'</div>')+'</div>';
+    $('#st_body').innerHTML=h;
+    $('#sa_mo').onchange=function(){ ST.smonth=this.value; stSales(); };
+    $('#sa_s').onclick=function(){
+      var e={date:$('#sa_d').value, rep:$('#sa_r').value, type:$('#sa_t').value, amount:$('#sa_a').value, client:$('#sa_c').value, ref:$('#sa_f').value};
+      if(!e.rep){ $('#sa_m').textContent=t('e_REP_REQUIRED'); return; }
+      if(!e.amount){ $('#sa_m').textContent=t('e_BAD_AMOUNT'); return; }
+      this.disabled=true;
+      call('addSale',{entry:e}).then(function(){ toast(t('saved'),'good'); ST.smonth=e.date.slice(0,7); stSales(); }).catch(function(x){ $('#sa_m').textContent=errText(x); $('#sa_s').disabled=false; });
+    };
+    $('#sa_pi').onclick=function(){
+      var tx=$('#sa_p').value; if(!tx.trim()) return; this.disabled=true;
+      call('importSales',{text:tx}).then(function(r){ toast(t('imported')+': '+r.added,'good'); stSales(); setTimeout(function(){ if($('#sa_pm')&&r.badLines.length) $('#sa_pm').textContent=t('badLines')+': '+r.badLines.join(', '); },50); })
+        .catch(function(x){ $('#sa_pm').textContent=errText(x); $('#sa_pi').disabled=false; });
+    };
+    $$('[data-sd]').forEach(function(b){ b.onclick=function(){ if(!confirm(t('del')+'?')) return; call('deleteSale',{id:b.getAttribute('data-sd')}).then(function(){ stSales(); }).catch(function(x){ toast(errText(x),'bad'); }); }; });
+  }).catch(fail);
+}
+function stSystem(){
+  call('settings').then(function(s){
+    var wk=String(s.weekend_days).split(',');
+    var h='<div class="card" style="max-width:640px">'+
+      '<div class="fld"><label class="f">'+t('farLimit')+'</label><input id="sy_f" class="in-f" style="max-width:180px" inputmode="numeric" dir="ltr" value="'+esc(s.far_limit_m)+'"></div>'+
+      '<div class="fld"><label class="f">'+t('weekend')+'</label><div class="flex">'+t('days').map(function(dn,i){ return '<label class="flex small" style="gap:5px;font-weight:700;border:1.5px solid var(--line);border-radius:999px;padding:4px 11px"><input type="checkbox" data-wk="'+i+'"'+(wk.indexOf(String(i))>=0?' checked':'')+'>'+dn+'</label>'; }).join('')+'</div></div>'+
+      '<label class="flex" style="font-weight:700;margin:6px 0 14px"><span class="switch"><input type="checkbox" id="sy_e"'+(String(s.email_alerts).toLowerCase()==='yes'?' checked':'')+'><span></span></span>'+t('emailAlerts')+'</label>'+
+      '<button class="btn gold" id="sy_s">'+t('save')+'</button></div>';
+    $('#st_body').innerHTML=h;
+    $('#sy_s').onclick=function(){
+      var x={far_limit_m:$('#sy_f').value, weekend_days:$$('[data-wk]').filter(function(c){return c.checked;}).map(function(c){return c.getAttribute('data-wk');}).join(','), email_alerts:$('#sy_e').checked?'yes':'no'};
+      call('saveSettings',{settings:x}).then(function(){ toast(t('saved'),'good'); }).catch(function(e){ toast(errText(e),'bad'); });
+    };
+  }).catch(fail);
+}
+function stAccount(){
+  var h='<div class="card" style="max-width:480px"><h2>'+t('myAccount')+'</h2>'+
+    '<div class="hint" style="margin-bottom:14px"><b>'+esc(S.me.name)+'</b> · <span dir="ltr">'+esc(S.me.email)+'</span></div>'+
+    '<div class="fld"><label class="f">'+t('language')+'</label><div class="seg"><button class="'+(S.lang==='en'?'on':'')+'" data-lg="en">English</button><button class="'+(S.lang==='ar'?'on':'')+'" data-lg="ar">العربية</button></div></div>'+
+    '<h2 style="margin-top:18px">'+t('changePw')+'</h2>'+
+    '<div class="fld"><label class="f">'+t('oldPw')+'</label><input id="ac_o" class="in-f" type="password" dir="ltr"></div>'+
+    '<div class="fld"><label class="f">'+t('newPw')+'</label><input id="ac_n" class="in-f" type="password" dir="ltr" autocomplete="new-password"></div>'+
+    '<div class="fld"><label class="f">'+t('confirmPw')+'</label><input id="ac_c" class="in-f" type="password" dir="ltr" autocomplete="new-password"></div>'+
+    '<div class="flex"><span class="err-line" id="ac_m"></span><button class="btn gold right" id="ac_s">'+t('save')+'</button></div></div>';
+  $('#st_body').innerHTML=h;
+  $$('[data-lg]').forEach(function(b){ b.onclick=function(){ if(S.lang!==b.getAttribute('data-lg')) toggleLang(); }; });
+  $('#ac_s').onclick=function(){
+    if($('#ac_n').value!==$('#ac_c').value){ $('#ac_m').textContent=t('pwMismatch'); return; }
+    call('changePassword',{oldPassword:$('#ac_o').value,newPassword:$('#ac_n').value}).then(function(){ toast(t('saved'),'good'); $('#ac_o').value=$('#ac_n').value=$('#ac_c').value=''; $('#ac_m').textContent=''; })
+      .catch(function(e){ $('#ac_m').textContent=errText(e); });
+  };
+}
+
+boot();
+</script>
+</body>
+</html>
