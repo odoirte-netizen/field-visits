@@ -116,7 +116,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 .num:hover{background:var(--ice);color:var(--blue)}
 .num.red{color:var(--red)} .num.zero{color:#a5b3c2;font-weight:600}
 /* rep table: one colour per column (Option 1) */
-:root{ --c-sales:#16a34a; --c-coll:#2563eb; --c-vis:#9333ea; --c-fake:#ea580c; --c-cust:#db2777; }
+:root{ --c-sales:#d8930c; --c-coll:#16a065; --c-vis:#1ba9cf; --c-fake:#e0393e; --c-cust:#16365c; }
 .num.c-sales{color:var(--c-sales)} .num.c-coll{color:var(--c-coll)} .num.c-vis{color:var(--c-vis)} .num.c-fake{color:var(--c-fake)} .num.c-cust{color:var(--c-cust)}
 .num.c-sales.zero,.num.c-coll.zero,.num.c-vis.zero,.num.c-fake.zero,.num.c-cust.zero{color:#a5b3c2}
 .hd{display:inline} .hd i{width:9px;height:9px;border-radius:50%;display:inline-block;vertical-align:middle;margin-inline-end:6px;position:relative;top:-1px}
@@ -557,14 +557,28 @@ function baseOpts(extra){
 }
 function deepMerge(a,b){ Object.keys(b).forEach(function(k){ if(b[k] && typeof b[k]==='object' && !Array.isArray(b[k]) && a[k] && typeof a[k]==='object') deepMerge(a[k],b[k]); else a[k]=b[k]; }); return a; }
 function mkChart(id, cfg){ if(!chartOK()) { var c=$('#'+id); if(c) c.parentNode.innerHTML='<div class="empty small">Charts need internet</div>'; return null; } var el=$('#'+id); if(!el) return null; var ch=new Chart(el, cfg); S.charts.push(ch); return ch; }
+/* writes each bar's value inside the bar (or just outside when the bar is too short) */
+var barValues = { id:'barValues', afterDatasetsDraw:function(ch){
+  var ctx=ch.ctx; ctx.save(); ctx.font='700 12px Tajawal, sans-serif'; ctx.textBaseline='middle';
+  ch.data.datasets.forEach(function(ds,di){
+    var meta=ch.getDatasetMeta(di); if(meta.hidden) return;
+    meta.data.forEach(function(bar,i){
+      var v=ds.data[i]; if(!v) return;
+      var txt=fmt(v), w=ctx.measureText(txt).width, len=Math.abs(bar.x-bar.base), dir=bar.x>=bar.base?1:-1;
+      if(len>w+14){ ctx.fillStyle='#fff'; ctx.textAlign=dir>0?'right':'left'; ctx.fillText(txt, bar.x-dir*7, bar.y); }
+      else { ctx.fillStyle='#16365c'; ctx.textAlign=dir>0?'left':'right'; ctx.fillText(txt, bar.x+dir*5, bar.y); }
+    });
+  });
+  ctx.restore();
+}};
 function achChart(reps){
   var rs = reps.filter(function(r){ return r.sales||r.coll; }).sort(function(a,b){ return (b.sales+b.coll)-(a.sales+a.coll); });
   if(!rs.length){ var c=$('#c_ach'); if(c){ c.parentNode.style.height='auto'; c.parentNode.innerHTML='<div class="empty">'+t('noData')+'</div>'; } return; }
-  $('#c_ach').parentNode.style.height = Math.max(260, rs.length*44+60)+'px';
+  $('#c_ach').parentNode.style.height = Math.max(280, rs.length*58+70)+'px';
   mkChart('c_ach',{ type:'bar', data:{ labels:rs.map(function(r){return r.name;}), datasets:[
-    {label:t('sales'), data:rs.map(function(r){return r.sales;}), backgroundColor:'#16a34a', borderRadius:6, barPercentage:.8},
-    {label:t('collection'), data:rs.map(function(r){return r.coll;}), backgroundColor:'#2563eb', borderRadius:6, barPercentage:.8}
-  ]}, options: baseOpts({ indexAxis:'y', scales:{ x:{ ticks:{ callback:function(v){ return fmt(v); } } }, y:{ position: S.lang==='ar'?'right':'left' } },
+    {label:t('sales'), data:rs.map(function(r){return r.sales;}), backgroundColor:COL.gold, borderRadius:6, barPercentage:.8},
+    {label:t('collection'), data:rs.map(function(r){return r.coll;}), backgroundColor:COL.sky, borderRadius:6, barPercentage:.8}
+  ]}, plugins:[barValues], options: baseOpts({ indexAxis:'y', scales:{ x:{ ticks:{ callback:function(v){ return fmt(v); } } }, y:{ position: S.lang==='ar'?'right':'left' } },
     plugins:{ tooltip:{ callbacks:{ label:function(c){ return c.dataset.label+': '+money(c.raw); } } } } }) });
 }
 
