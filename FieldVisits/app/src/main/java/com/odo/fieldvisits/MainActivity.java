@@ -2,7 +2,9 @@ package com.odo.fieldvisits;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -53,7 +55,18 @@ public class MainActivity extends AppCompatActivity {
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
 
-        web.setWebViewClient(new WebViewClient());
+        web.setWebViewClient(new WebViewClient() {
+            // Keep the app's own pages inside; open maps, phone numbers and
+            // other sites in their own apps so the dashboard isn't replaced.
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return openOutside(url);
+            }
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest req) {
+                return openOutside(req.getUrl().toString());
+            }
+        });
         web.setWebChromeClient(new WebChromeClient() {
             // auto-grant the web layer's geolocation prompt (we gate real GPS natively)
             @Override
@@ -121,6 +134,23 @@ public class MainActivity extends AppCompatActivity {
             getSharedPreferences("fv", MODE_PRIVATE).edit().putString("url", u.trim()).apply();
             runOnUiThread(new Runnable() { public void run() { openApp(); } });
         }
+    }
+
+    private boolean openOutside(String url) {
+        if (url == null) return false;
+        String u = url.toLowerCase();
+        boolean ours = u.startsWith("https://script.google.com/")
+            || u.contains(".googleusercontent.com/")
+            || u.startsWith("https://accounts.google.com/")
+            || u.startsWith("https://localhost/")
+            || u.startsWith("about:") || u.startsWith("data:") || u.startsWith("blob:");
+        if (ours) return false;
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(this, "No app found to open this link", Toast.LENGTH_SHORT).show();
+        }
+        return true;
     }
 
     private boolean hasLoc() {
