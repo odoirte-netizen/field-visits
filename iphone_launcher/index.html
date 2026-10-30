@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Field Visits</title>
+<!-- iPhone home-screen icon + app name -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Field Visits">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1a6fae">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root{ --navy:#16365c; --gold:#e8a317; --mut:#64748b; }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font-family:-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;color:var(--navy);
+       background:linear-gradient(135deg,#1a5f9e 0%,#1b8fc4 55%,#1bb4d8 100%);min-height:100vh;
+       display:flex;align-items:center;justify-content:center;padding:24px}
+  .box{background:#fff;border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.25);width:100%;max-width:420px;padding:26px 22px;text-align:center}
+  .icon{width:96px;height:96px;border-radius:22px;box-shadow:0 6px 18px rgba(22,54,92,.18)}
+  h1{margin:14px 0 4px;font-size:22px}
+  .sub{color:var(--mut);font-weight:600;font-size:14px;margin-bottom:18px}
+  .btn{display:block;width:100%;border:0;border-radius:999px;padding:15px;font-size:17px;font-weight:800;color:#fff;background:var(--gold);text-decoration:none;box-shadow:0 6px 16px rgba(232,163,23,.35)}
+  .steps{text-align:start;background:#e8f7fd;border-radius:14px;padding:12px 14px;margin-top:18px;font-size:14.5px;line-height:1.7}
+  .steps b{color:var(--navy)}
+  .en{direction:ltr;text-align:left;margin-top:10px}
+  .hide{display:none}
+</style>
+</head>
+<body>
+<div class="box" id="box">
+  <img class="icon" src="apple-touch-icon.png" alt="">
+  <h1>الزيارات الميدانية · Field Visits</h1>
+  <div class="sub">مؤسسة المنارة المتحدة للتطوير الطبي</div>
+  <a class="btn" id="open" href="#">فتح التطبيق · Open app</a>
+  <div class="steps" id="ios">
+    <b>لإضافته إلى الشاشة الرئيسية في الآيفون:</b><br>
+    ١) اضغط زر المشاركة <b>⬆︎</b> في سفاري<br>
+    ٢) اختر <b>«إضافة إلى الشاشة الرئيسية»</b><br>
+    ٣) اضغط <b>إضافة</b> — ستظهر أيقونة الحقيبة
+    <div class="en"><b>Add to iPhone home screen:</b> Safari → Share <b>⬆︎</b> → <b>Add to Home Screen</b> → <b>Add</b>.</div>
+  </div>
+</div>
+<script>
+  // ====== YOUR APP LINK (the Apps Script /exec link) ======
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbzcEuiQMHRly5q5_OOzeEcEeO8KFCt9YUgC1wuNa4097WoPOmD6ib1xASZcue71PeAUTA/exec';
+  // ========================================================
+  document.getElementById('open').href = APP_URL;
+  var standalone = window.navigator.standalone === true ||
+                   (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  // Opened from the home-screen icon → go straight into the app.
+  if (standalone) {
+    document.getElementById('box').style.opacity = '0.6';
+    location.replace(APP_URL);
+  }
+  // Show the "add to home screen" steps only on iPhone/iPad.
+  if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) document.getElementById('ios').classList.add('hide');
+</script>
+</body>
+</html>
