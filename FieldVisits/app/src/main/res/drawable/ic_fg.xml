@@ -1,9 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Field Visits app icon: briefcase (yellow flap, white body) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <!-- a location pin -->
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M54,30 C44,30 36,38 36,48 C36,62 54,80 54,80 C54,80 72,62 72,48 C72,38 64,30 54,30 Z"/>
-    <path android:fillColor="#2f6df6"
-        android:pathData="M54,42 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0"/>
+    <group android:translateX="18" android:translateY="24.6" android:scaleX="0.6" android:scaleY="0.6">
+        <path android:pathData="M49,8 H71 A7,7 0 0 1 78,15 V28 H42 V15 A7,7 0 0 1 49,8 Z" android:strokeColor="#1a1a1a" android:strokeWidth="4" android:strokeLineJoin="round"/>
+        <path android:pathData="M22,24 H98 A10,10 0 0 1 108,34 V80 A10,10 0 0 1 98,90 H22 A10,10 0 0 1 12,80 V34 A10,10 0 0 1 22,24 Z" android:fillColor="#FFFFFF"/>
+        <path android:pathData="M22,24 H98 A10,10 0 0 1 108,34 V52 H12 V34 A10,10 0 0 1 22,24 Z" android:fillColor="#FCD538"/>
+        <path android:pathData="M12,52 H108" android:strokeColor="#1a1a1a" android:strokeWidth="4"/>
+        <path android:pathData="M22,24 H98 A10,10 0 0 1 108,34 V80 A10,10 0 0 1 98,90 H22 A10,10 0 0 1 12,80 V34 A10,10 0 0 1 22,24 Z" android:strokeColor="#1a1a1a" android:strokeWidth="4" android:strokeLineJoin="round"/>
+        <path android:pathData="M56.5,44 H63.5 A3.5,3.5 0 0 1 67,47.5 V56.5 A3.5,3.5 0 0 1 63.5,60 H56.5 A3.5,3.5 0 0 1 53,56.5 V47.5 A3.5,3.5 0 0 1 56.5,44 Z" android:fillColor="#FFFFFF" android:strokeColor="#1a1a1a" android:strokeWidth="3.4" android:strokeLineJoin="round"/>
+    </group>
 </vector>
