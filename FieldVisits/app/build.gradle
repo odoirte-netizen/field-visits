@@ -8,14 +8,22 @@ android {
         applicationId "com.odo.fieldvisits"
         minSdk 23
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 3
+        versionName "3.0"
+    }
+    // Fixed key: every new APK installs over the previous one (no uninstall needed).
+    signingConfigs {
+        fixed {
+            storeFile file('fieldvisits.jks')
+            storePassword 'fieldvisits-umdco'
+            keyAlias 'fieldvisits'
+            keyPassword 'fieldvisits-umdco'
+        }
     }
     buildTypes {
         release {
             minifyEnabled false
-            // debug-signed so the output APK is installable by sideload
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.fixed
         }
     }
     lint {

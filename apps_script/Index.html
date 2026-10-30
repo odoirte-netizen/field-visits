@@ -255,6 +255,11 @@ en:{
   e_BAD_TYPE:'Choose Sales or Collection', e_BAD_AMOUNT:'Enter the amount', e_RANGE_TOO_LONG:'Please choose a shorter period', e_BAD_VALUE:'Check the values',
   e_SERVER:'Server error — try again', e_NETWORK:'No connection — check internet and try again',
   details:'Details', refresh:'Refresh',
+  loc_denied:'Location permission is not given to Field Visits. Tap “Allow location”, choose “While using the app” and keep “Precise location” on, then come back and tap Retry.',
+  loc_off:'The phone’s Location is switched off. Tap “Turn on location”, switch it on, come back and tap Retry.',
+  loc_nofix:'Location is on but there is no signal yet. Step near a window or outside, then tap Retry.',
+  loc_web:'The browser blocked location for this page. Allow location for this site in the browser settings, then tap Retry.',
+  btnAllow:'Allow location', btnTurnOn:'Turn on location', locSearching:'Searching… (can take up to 25 seconds indoors)',
   importV:'Import visits', lastDay:'Last day', noTargets:'Set targets in Settings → Targets to see achievement %', noAreas:'Add an area to your customers (Customers page) to see this chart', fqTitle:'Import visits from FocusQuad Excel', fqHelp:'Choose the FocusQuad export (e.g. Month.xlsx or Daily.xlsx). Visits already in the app are skipped, so importing the same file twice is safe.',
   chooseFile:'Choose Excel file', reading:'Reading the file…', fileHas:'File has', visitsFrom:'visits from', lastNDays:'Last {n} days', allFile:'Whole file',
   willImport:'Will import', importNow:'Import', importing:'Importing…', added:'Added', duplicatesSkipped:'Already in the app (skipped)',
@@ -315,6 +320,11 @@ ar:{
   e_BAD_TYPE:'اختر مبيعات أو تحصيل', e_BAD_AMOUNT:'أدخل المبلغ', e_RANGE_TOO_LONG:'اختر فترة أقصر', e_BAD_VALUE:'راجع القيم',
   e_SERVER:'خطأ في الخادم — حاول مرة أخرى', e_NETWORK:'لا يوجد اتصال — تحقق من الإنترنت وحاول مجددًا',
   details:'التفاصيل', refresh:'تحديث',
+  loc_denied:'لم يتم منح تطبيق الزيارات صلاحية الموقع. اضغط «السماح بالموقع» واختر «أثناء استخدام التطبيق» مع تفعيل «الموقع الدقيق»، ثم ارجع واضغط إعادة المحاولة.',
+  loc_off:'خدمة الموقع في الجوال مغلقة. اضغط «تشغيل الموقع» وفعّلها، ثم ارجع واضغط إعادة المحاولة.',
+  loc_nofix:'الموقع مفعّل لكن لا توجد إشارة بعد. اقترب من نافذة أو اخرج قليلًا ثم اضغط إعادة المحاولة.',
+  loc_web:'المتصفح منع الموقع لهذه الصفحة. اسمح بالموقع لهذا الموقع من إعدادات المتصفح ثم اضغط إعادة المحاولة.',
+  btnAllow:'السماح بالموقع', btnTurnOn:'تشغيل الموقع', locSearching:'جارٍ البحث… (قد يستغرق حتى 25 ثانية داخل المباني)',
   importV:'استيراد الزيارات', lastDay:'آخر يوم', noTargets:'حدد المستهدفات من الإعدادات ← المستهدفات لرؤية نسب التحقيق', noAreas:'أضف المنطقة للعملاء (صفحة العملاء) لرؤية هذا الرسم', fqTitle:'استيراد الزيارات من ملف إكسل فوكس كواد', fqHelp:'اختر ملف التصدير من فوكس كواد (مثل Month.xlsx أو Daily.xlsx). الزيارات الموجودة مسبقًا يتم تجاهلها، لذا يمكن استيراد نفس الملف مرتين بأمان.',
   chooseFile:'اختر ملف إكسل', reading:'جارٍ قراءة الملف…', fileHas:'الملف يحتوي', visitsFrom:'زيارة من', lastNDays:'آخر {n} أيام', allFile:'الملف كاملًا',
   willImport:'سيتم استيراد', importNow:'استيراد', importing:'جارٍ الاستيراد…', added:'تمت الإضافة', duplicatesSkipped:'موجودة مسبقًا (تم تجاهلها)',
@@ -937,28 +947,49 @@ function combo(host, list, value, onPick){
 /* location */
 function renderLoc(){
   var el=$('#nv_loc'); if(!el) return;
-  var g=NV.gps, st=NV.gpsState;
-  if(st==='getting') el.innerHTML='<div class="loc"><span class="spin"></span><span>'+t('locGetting')+'</span></div>';
+  var g=NV.gps, st=NV.gpsState, err=NV.gpsErr||'nofix', app=!!(window.AndroidGPS&&AndroidGPS.openSettings);
+  if(st==='getting') el.innerHTML='<div class="loc"><span class="spin"></span><span>'+t('locGetting')+'<div class="small mut" style="font-weight:600">'+t('locSearching')+'</div></span></div>';
   else if(st==='ok') el.innerHTML='<div class="loc ok"><span>✓</span><span>'+t('locReady')+(g.accuracy?' · ±'+Math.round(g.accuracy)+' m':'')+'</span><span class="sp"></span><button class="btn ghost sm" type="button" id="nv_rl">'+t('retry')+'</button></div>';
-  else el.innerHTML='<div class="loc bad"><span>⚠</span><span>'+t('locOff')+'</span><span class="sp"></span><button class="btn gold sm" type="button" id="nv_rl">'+t('retry')+'</button></div>';
+  else el.innerHTML='<div class="loc bad" style="flex-wrap:wrap"><span>⚠</span><span style="flex:1;min-width:200px">'+t('loc_'+err)+'</span>'+
+    '<span class="flex" style="gap:8px">'+
+    (app&&err==='denied'?'<button class="btn ghost sm" type="button" id="nv_set" data-w="app">'+t('btnAllow')+'</button>':'')+
+    (app&&err==='off'?'<button class="btn ghost sm" type="button" id="nv_set" data-w="loc">'+t('btnTurnOn')+'</button>':'')+
+    '<button class="btn gold sm" type="button" id="nv_rl">'+t('retry')+'</button></span></div>';
   if($('#nv_rl')) $('#nv_rl').onclick=function(){ getGps(); };
+  if($('#nv_set')) $('#nv_set').onclick=function(){ try{ AndroidGPS.openSettings(this.getAttribute('data-w')); }catch(e){} };
 }
 function getGps(){
-  NV.gpsState='getting'; NV.gps=null; renderLoc();
-  var done=function(g){ NV.gps=g; NV.gpsState=g?'ok':'bad'; renderLoc(); if(g && $('#nv_alert') && $('#nv_alert').innerHTML) validateVisit(true); };
+  NV.gpsState='getting'; NV.gps=null; NV.gpsErr=''; renderLoc();
+  var done=function(g, err){ NV.gps=g; NV.gpsErr=g?'':(err||'nofix'); NV.gpsState=g?'ok':'bad'; renderLoc(); if($('#nv_alert') && $('#nv_alert').innerHTML) validateVisit(true); };
+  var web=function(srcTag, errIfFail){
+    if(!navigator.geolocation) return done(null, errIfFail||'nofix');
+    navigator.geolocation.getCurrentPosition(function(p){
+      done({lat:p.coords.latitude, lon:p.coords.longitude, accuracy:p.coords.accuracy, altitude:p.coords.altitude, mock:false, source:srcTag});
+    }, function(e){ done(null, errIfFail || (e && e.code===1 ? 'web' : 'nofix')); }, {enableHighAccuracy:true, timeout:20000, maximumAge:60000});
+  };
   if(window.AndroidGPS && AndroidGPS.requestLocation){
-    try{ AndroidGPS.requestLocation(); }catch(e){ return done(null); }
+    try{ AndroidGPS.requestLocation(); }catch(e){ return web('android-web'); }
     var n=0, iv=setInterval(function(){
       n++; var r=''; try{ r=AndroidGPS.pollResult(); }catch(e){}
-      if(r){ clearInterval(iv); try{ var o=JSON.parse(r); done(o.ok&&o.lat!=null?{lat:o.lat,lon:o.lon,accuracy:o.accuracy,altitude:o.altitude,mock:!!o.mock,source:'android'}:null); }catch(e){ done(null); } }
-      else if(n>60){ clearInterval(iv); done(null); }
+      if(r){
+        clearInterval(iv);
+        var o={}; try{ o=JSON.parse(r); }catch(e){}
+        if(o.ok && o.lat!=null) return done({lat:o.lat,lon:o.lon,accuracy:o.accuracy,altitude:o.altitude,mock:!!o.mock,source:'android'+(o.provider?'-'+o.provider:'')});
+        if(o.err==='nofix') return web('android-web','nofix');   // last try through the page itself
+        return done(null, o.err||'nofix');
+      }
+      if(n>100){ clearInterval(iv); done(null,'nofix'); }   // 30 s
     },300);
     return;
   }
-  if(!navigator.geolocation) return done(null);
-  navigator.geolocation.getCurrentPosition(function(p){
-    done({lat:p.coords.latitude, lon:p.coords.longitude, accuracy:p.coords.accuracy, altitude:p.coords.altitude, mock:false, source:'web'});
-  }, function(){ done(null); }, {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+  web('web');
+}
+function showMissing(miss){
+  var a=$('#nv_alert'); if(!a) return;
+  a.innerHTML = miss.length? '<div class="alert"><b>⚠ '+t('completeTitle')+'</b><ul>'+miss.map(function(k){
+    var txt = (k==='LOCATION' && NV.gpsErr) ? t('loc_'+NV.gpsErr) : t('miss_'+k);
+    return '<li>'+txt+'</li>'; }).join('')+'</ul></div>' : '';
+  if(miss.length) a.scrollIntoView({behavior:'smooth', block:'center'});
 }
 function validateVisit(quiet){
   var miss=[], p=$('#nv_p').value.trim(), m=$('#nv_m').value.replace(/[\s-]/g,'');
@@ -971,11 +1002,6 @@ function validateVisit(quiet){
   var ci=$('#nv_cb input'); if(ci) ci.classList.toggle('err', miss.indexOf('CUSTOMER')>=0);
   showMissing(miss);
   return miss;
-}
-function showMissing(miss){
-  var a=$('#nv_alert'); if(!a) return;
-  a.innerHTML = miss.length? '<div class="alert"><b>⚠ '+t('completeTitle')+'</b><ul>'+miss.map(function(k){return '<li>'+t('miss_'+k)+'</li>';}).join('')+'</ul></div>' : '';
-  if(miss.length) a.scrollIntoView({behavior:'smooth', block:'center'});
 }
 function submitVisit(){
   var miss=validateVisit();

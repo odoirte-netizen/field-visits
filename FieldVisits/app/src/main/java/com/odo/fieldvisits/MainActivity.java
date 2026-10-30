@@ -180,90 +180,168 @@ public class MainActivity extends AppCompatActivity {
         return loc.isFromMockProvider();                         // API 18–30
     }
 
+    private boolean hasFine() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /** Is the phone's Location switch on? */
+    private boolean locationOn() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) return lm.isLocationEnabled();
+            return lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch (Exception e) { return true; }
+    }
+
     /**
      * The object exposed to JavaScript as window.AndroidGPS.
-     * Page→native only (works inside the Apps Script iframe, where a
-     * native→page callback would not reach): the page calls
-     * requestLocation() then polls pollResult(), which returns "" while
-     * the fix is pending and a JSON string once it is ready.
+     * Page→native only (works inside the Apps Script iframe): the page calls
+     * requestLocation() then polls pollResult(), which returns "" while the
+     * fix is pending and a JSON string once it is ready.
+     *
+     * Asks every available source at once (GPS, network, fused) and takes the
+     * first fix that is accurate enough, so it also works indoors. Falls back
+     * to the best fix seen, then to a recent last-known position. On failure
+     * it says why: "denied" (no permission), "off" (phone location switched
+     * off) or "nofix" (no signal yet).
      */
     private class GpsBridge {
 
         private volatile String lastResult = "";   // "" = pending
+        private static final long WAIT_MS = 25000;  // total wait for a fix
+        private static final float GOOD_M = 100f;   // accept at once when this accurate
+        private static final long RECENT_MS = 10 * 60 * 1000L; // last-known still useful
 
         @JavascriptInterface
         public String pollResult() { return lastResult; }
 
         @JavascriptInterface
+        public String status() {
+            return !hasLoc() ? "denied" : (!locationOn() ? "off" : "ok");
+        }
+
+        @JavascriptInterface
+        public void openSettings(final String which) {
+            runOnUiThread(new Runnable() { public void run() {
+                try {
+                    Intent i;
+                    if ("app".equals(which)) {
+                        i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", getPackageName(), null));
+                    } else {
+                        i = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    }
+                    startActivity(i);
+                } catch (Exception ignore) {}
+            }});
+        }
+
+        @JavascriptInterface
         public void requestLocation() {
             lastResult = "";   // reset for a fresh fix
+            runOnUiThread(new Runnable() { public void run() { start(); } });
+        }
+
+        private void start() {
             if (!hasLoc()) {
-                emit(null);
-                runOnUiThread(new Runnable() { public void run() {
-                    Toast.makeText(MainActivity.this,
-                        "Please allow location for Field Visits", Toast.LENGTH_LONG).show();
-                    if (!hasLoc()) ActivityCompat.requestPermissions(MainActivity.this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQ_LOC);
-                }});
+                fail("denied");
+                ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                                 Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOC);
                 return;
             }
-            // Try a fresh single fix; fall back to last known.
-            try {
-                final boolean[] done = {false};
-                final LocationListener once = new LocationListener() {
-                    @Override public void onLocationChanged(@NonNull Location location) {
+            if (!locationOn()) { fail("off"); return; }
+
+            final java.util.List<String> sources = new java.util.ArrayList<>();
+            java.util.List<String> enabled;
+            try { enabled = lm.getProviders(true); } catch (Exception e) { enabled = new java.util.ArrayList<>(); }
+            for (String pv : new String[]{"fused", LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER}) {
+                if (!enabled.contains(pv)) continue;
+                if (LocationManager.GPS_PROVIDER.equals(pv) && !hasFine()) continue;  // "approximate" only
+                sources.add(pv);
+            }
+            if (sources.isEmpty()) { useLastKnownOr("off"); return; }
+
+            final boolean[] done = {false};
+            final Location[] best = {null};
+            final java.util.List<LocationListener> listeners = new java.util.ArrayList<>();
+            final Handler h = new Handler(Looper.getMainLooper());
+
+            final Runnable stop = new Runnable() { public void run() {
+                for (LocationListener l : listeners) { try { lm.removeUpdates(l); } catch (Exception ignore) {} }
+            }};
+
+            for (String pv : sources) {
+                LocationListener l = new LocationListener() {
+                    @Override public void onLocationChanged(@NonNull Location loc) {
                         if (done[0]) return;
-                        done[0] = true;
-                        try { lm.removeUpdates(this); } catch (Exception ignore) {}
-                        emit(location);
+                        if (best[0] == null || (loc.hasAccuracy() && (!best[0].hasAccuracy()
+                                || loc.getAccuracy() < best[0].getAccuracy()))) best[0] = loc;
+                        if (loc.hasAccuracy() && loc.getAccuracy() <= GOOD_M) {
+                            done[0] = true; stop.run(); emit(loc);
+                        }
                     }
                     @Override public void onProviderDisabled(@NonNull String p) {}
                     @Override public void onProviderEnabled(@NonNull String p) {}
                     @Override public void onStatusChanged(String p, int st, Bundle e) {}
                 };
-                boolean gps = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-                final String provider = gps ? LocationManager.GPS_PROVIDER
-                                            : LocationManager.NETWORK_PROVIDER;
                 try {
-                    lm.requestLocationUpdates(provider, 0L, 0f, once, Looper.getMainLooper());
-                } catch (SecurityException se) { emit(null); return; }
-
-                // Timeout after 10s -> use last known
-                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                    public void run() {
-                        if (done[0]) return;
-                        done[0] = true;
-                        try { lm.removeUpdates(once); } catch (Exception ignore) {}
-                        Location last = null;
-                        try {
-                            last = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                            if (last == null) last = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                        } catch (SecurityException ignore) {}
-                        emit(last);
-                    }
-                }, 10000);
-            } catch (Exception e) {
-                emit(null);
+                    lm.requestLocationUpdates(pv, 0L, 0f, l, Looper.getMainLooper());
+                    listeners.add(l);
+                } catch (Exception ignore) {}
             }
+            if (listeners.isEmpty()) { useLastKnownOr("nofix"); return; }
+
+            // After 8 s take a usable fix even if not very accurate.
+            h.postDelayed(new Runnable() { public void run() {
+                if (done[0] || best[0] == null) return;
+                if (best[0].hasAccuracy() && best[0].getAccuracy() <= 500f) {
+                    done[0] = true; stop.run(); emit(best[0]);
+                }
+            }}, 8000);
+            // Final timeout: best seen, then recent last-known, else "nofix".
+            h.postDelayed(new Runnable() { public void run() {
+                if (done[0]) return;
+                done[0] = true; stop.run();
+                if (best[0] != null) emit(best[0]); else useLastKnownOr("nofix");
+            }}, WAIT_MS);
+        }
+
+        private void useLastKnownOr(String err) {
+            Location bestLast = null;
+            try {
+                for (String pv : lm.getProviders(true)) {
+                    if (LocationManager.GPS_PROVIDER.equals(pv) && !hasFine()) continue;
+                    Location l = lm.getLastKnownLocation(pv);
+                    if (l == null) continue;
+                    long age = System.currentTimeMillis() - l.getTime();
+                    if (age > RECENT_MS) continue;
+                    if (bestLast == null || l.getTime() > bestLast.getTime()) bestLast = l;
+                }
+            } catch (Exception ignore) {}
+            if (bestLast != null) emit(bestLast); else fail(err);
+        }
+
+        private void fail(String err) {
+            JSONObject o = new JSONObject();
+            try { o.put("ok", false); o.put("err", err); o.put("lat", JSONObject.NULL); o.put("lon", JSONObject.NULL); }
+            catch (Exception ignore) {}
+            lastResult = o.toString();
         }
 
         private void emit(Location loc) {
             JSONObject o = new JSONObject();
             try {
-                if (loc == null) {
-                    o.put("lat", JSONObject.NULL);
-                    o.put("lon", JSONObject.NULL);
-                    o.put("ok", false);
-                } else {
-                    o.put("lat", loc.getLatitude());
-                    o.put("lon", loc.getLongitude());
-                    o.put("accuracy", loc.hasAccuracy() ? loc.getAccuracy() : JSONObject.NULL);
-                    o.put("altitude", loc.hasAltitude() ? loc.getAltitude() : JSONObject.NULL);
-                    o.put("hasAltitudeField", true);
-                    o.put("mock", isMock(loc));
-                    o.put("source", "android");
-                    o.put("ok", true);
-                }
+                o.put("lat", loc.getLatitude());
+                o.put("lon", loc.getLongitude());
+                o.put("accuracy", loc.hasAccuracy() ? loc.getAccuracy() : JSONObject.NULL);
+                o.put("altitude", loc.hasAltitude() ? loc.getAltitude() : JSONObject.NULL);
+                o.put("hasAltitudeField", true);
+                o.put("mock", isMock(loc));
+                o.put("provider", loc.getProvider());
+                o.put("source", "android");
+                o.put("ok", true);
             } catch (Exception ignore) {}
             lastResult = o.toString();   // picked up by the page's next pollResult()
         }
