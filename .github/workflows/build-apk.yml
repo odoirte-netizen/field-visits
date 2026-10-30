@@ -2,6 +2,8 @@ name: Build APK
 on:
   push:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -26,3 +28,13 @@ jobs:
         with:
           name: FieldVisits-APK
           path: FieldVisits/out/FieldVisits.apk
+      # Also publish on the Releases page: one fixed download link that doesn't expire.
+      - name: Publish to Releases (latest)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view latest >/dev/null 2>&1 || \
+            gh release create latest --title "Field Visits APK (latest)" --notes "Latest build of the Field Visits Android app. Download FieldVisits.apk below."
+          gh release upload latest out/FieldVisits.apk --clobber
+          gh release edit latest --notes "Latest build of the Field Visits Android app (built $(date -u +'%Y-%m-%d %H:%M UTC') from ${GITHUB_SHA::7}). Download FieldVisits.apk below."
