@@ -24,7 +24,7 @@ var TZ = 'Asia/Riyadh';
 
 var APP_TITLE = 'Field Visits · UMDCO';
 var DEFAULT_PASSWORD = '000000';
-var SCHEMA_VERSION = '3';
+var SCHEMA_VERSION = '4';
 var TOKEN_DAYS = 60;
 
 var SH = {
@@ -36,7 +36,10 @@ var COLS = {
   Clients: ['code', 'name', 'rep_email', 'lat', 'lon', 'city', 'contact', 'phone', 'status', 'map_link', 'notes', 'area'],
   Visits: ['id', 'ts', 'date', 'time', 'rep_email', 'rep_name', 'client_code', 'client_name', 'visit_type',
     'lat', 'lon', 'accuracy', 'altitude', 'mock', 'distance_m', 'flag', 'tags', 'comment',
-    'person_name', 'person_mobile', 'source'],
+    'person_name', 'person_mobile', 'source',
+    // v4: check-in / check-out
+    'status', 'checkout_time', 'duration_min', 'out_lat', 'out_lon', 'out_accuracy', 'out_distance_m',
+    'gps_info', 'device_id', 'platform', 'verify_status', 'verify_by', 'verify_at'],
   Settings: ['key', 'value'],
   MonthlyTargets: ['rep_email', 'month', 'sales_target', 'collection_target'],
   Sales: ['id', 'date', 'rep_email', 'type', 'amount', 'client', 'ref', 'note', 'added_by', 'added_at']
@@ -45,10 +48,15 @@ var DEFAULT_SETTINGS = {
   far_limit_m: 1500,       // flag visits farther than this from the customer
   weekend_days: '5',       // 0=Sun .. 5=Fri, 6=Sat ; e.g. "5,6"
   email_alerts: 'no',      // "yes" = email the manager on each flagged visit
-  currency: 'SAR'
+  currency: 'SAR',
+  min_visit_min: 5,        // visits shorter than this (minutes) are flagged
+  verify_per_day: 5        // how many visits to call-check each day
 };
 // Tags that make a visit "fake" (flagged). Others are notes only.
-var STRONG_TAGS = ['MOCK', 'FAR', 'FROZEN', 'TELEPORT', 'ROUND', 'BURST', 'DUP'];
+var STRONG_TAGS = ['MOCK', 'FAR', 'FROZEN', 'TELEPORT', 'ROUND', 'BURST', 'DUP',
+  'SHORT', 'OUT_FAR', 'PIN_FROZEN', 'SYNTH', 'SHARED_DEVICE', 'CALL_DENIED'];
+/** A visit counts in reports when it was finished (or saved by an older version). */
+function _counted(v) { var st = _low(v.status); return st === '' || st === 'done'; }
 
 /* ================================================================
  *  Web entry
@@ -91,6 +99,11 @@ var ACTIONS = {
   deleteClient:    { manager: true, run: function (me, r) { return _deleteClient(r.code); } },
   visits:          { run: function (me, r) { return _visits(me, r); } },
   saveVisit:       { run: function (me, r) { return _saveVisit(me, r.visit); } },
+  startVisit:      { run: function (me, r) { return _startVisit(me, r.visit); } },
+  finishVisit:     { run: function (me, r) { return _finishVisit(me, r.visit); } },
+  cancelVisit:     { run: function (me, r) { return _cancelVisit(me, r.id); } },
+  verifyList:      { manager: true, run: function (me, r) { return _verifyList(r.day); } },
+  setVerify:       { manager: true, run: function (me, r) { return _setVerify(me, r.id, r.status); } },
   users:           { manager: true, run: function () { return _usersOut(); } },
   saveUser:        { manager: true, run: function (me, r) { return _saveUser(me, r.user); } },
   resetPassword:   { manager: true, run: function (me, r) { return _resetPassword(r.email); } },
@@ -312,6 +325,8 @@ function _settings() {
   Object.keys(DEFAULT_SETTINGS).forEach(function (k) { out[k] = DEFAULT_SETTINGS[k]; });
   _rows(SH.settings).forEach(function (s) { if (_str(s.key)) out[_str(s.key)] = s.value; });
   out.far_limit_m = _num(out.far_limit_m) || DEFAULT_SETTINGS.far_limit_m;
+  out.min_visit_min = _num(out.min_visit_min) === null ? DEFAULT_SETTINGS.min_visit_min : _num(out.min_visit_min);
+  out.verify_per_day = _num(out.verify_per_day) === null ? DEFAULT_SETTINGS.verify_per_day : _num(out.verify_per_day);
   return out;
 }
 function _saveSettings(s) {
@@ -322,6 +337,7 @@ function _saveSettings(s) {
       if (!s.hasOwnProperty(k)) return;
       var v = s[k];
       if (k === 'far_limit_m') { v = _num(v); if (!v || v < 50) throw _err('BAD_VALUE', k); }
+      if (k === 'min_visit_min' || k === 'verify_per_day') { v = _num(v); if (v === null || v < 0 || v > 120) throw _err('BAD_VALUE', k); }
       if (k === 'weekend_days') v = String(v).split(/[ ,]+/).filter(function (x) { return /^[0-6]$/.test(x); }).join(',');
       var row = rows.filter(function (r) { return _str(r.key) === k; })[0];
       if (row) _update(SH.settings, row._row, { value: v }); else _append(SH.settings, { key: k, value: v });
@@ -603,11 +619,16 @@ function _visitOut(v, clientMap, forManager) {
     rep: _low(v.rep_email), repName: _str(v.rep_name), code: _str(v.client_code),
     client: _str(v.client_name) || (c ? _str(c.name) : ''), area: c ? (_str(c.area) || _str(c.city)) : '',
     person: _str(v.person_name), mobile: _str(v.person_mobile), comment: _str(v.comment),
-    lat: _num(v.lat), lon: _num(v.lon), type: _str(v.visit_type)
+    lat: _num(v.lat), lon: _num(v.lon), type: _str(v.visit_type),
+    status: _low(v.status) || 'done', out: _ts(v.checkout_time), dur: _num(v.duration_min),
+    outLat: _num(v.out_lat), outLon: _num(v.out_lon)
   };
   if (forManager) {
     o.flag = _bool(v.flag); o.tags = _tagsOut(v.tags); o.dist = _num(v.distance_m);
     o.acc = _num(v.accuracy); o.mock = _bool(v.mock); o.src = _str(v.source);
+    o.outDist = _num(v.out_distance_m); o.outAcc = _num(v.out_accuracy);
+    o.device = _str(v.device_id); o.platform = _str(v.platform);
+    o.verify = _low(v.verify_status); o.verifyBy = _str(v.verify_by); o.verifyAt = _str(v.verify_at);
   }
   return o;
 }
@@ -653,8 +674,10 @@ function _visits(me, r) {
     .map(function (u) { return { email: _low(u.email), name: _str(u.name) || _low(u.email), assigned: assigned[_low(u.email)] || 0 }; })
     .sort(function (a, b) { return a.name.localeCompare(b.name); })
     : [{ email: me.email, name: me.name, assigned: assigned[me.email] || 0 }];
+  var openRow = _openVisitOf(me.email);
   return { from: from, to: to, today: today, visits: list, reps: reps,
-    weekend: String(_settings().weekend_days) };
+    weekend: String(_settings().weekend_days), minVisit: _settings().min_visit_min,
+    open: openRow ? _visitOut(openRow, cm, false) : null };
 }
 
 function _saveVisit(me, v) {
@@ -725,6 +748,7 @@ function _check(client, v, todays) {
   if (_decimals(v.lat) <= 3 && _decimals(v.lon) <= 3) tags.push('ROUND'); // typed-in coordinates
   if (v.acc !== null && v.acc > 300) tags.push('LOW_ACC');           // note only
 
+  todays = todays.filter(function (x) { var st = _low(x.status); return st !== 'cancelled' && st !== 'unfinished'; });
   var prev = todays.length ? todays[todays.length - 1] : null;
   todays.forEach(function (x) {
     if (_str(x.client_code) === _str(client.code)) { if (tags.indexOf('DUP') < 0) tags.push('DUP'); }
@@ -732,9 +756,12 @@ function _check(client, v, todays) {
              Math.abs(_num(x.lon) - v.lon) < 0.000005) { if (tags.indexOf('FROZEN') < 0) tags.push('FROZEN'); }
   });
   if (prev && _str(prev.client_code) !== _str(client.code)) {
-    var pt = _ts(prev.time), mins = _mins(v.time) - _mins(pt);
-    var d = _haversine(_num(prev.lat), _num(prev.lon), v.lat, v.lon);
-    if (mins >= 0 && mins < 4) tags.push('BURST');
+    // compare with where/when the previous visit ENDED (check-out), if known
+    var pt = _ts(prev.checkout_time) || _ts(prev.time), mins = _mins(v.time) - _mins(pt);
+    var pLat = _num(prev.out_lat) !== null ? _num(prev.out_lat) : _num(prev.lat);
+    var pLon = _num(prev.out_lon) !== null ? _num(prev.out_lon) : _num(prev.lon);
+    var d = _haversine(pLat, pLon, v.lat, v.lon);
+    if (mins >= 0 && mins < (_ts(prev.checkout_time) ? 1 : 4) && d !== null && d > 300) tags.push('BURST');
     if (d !== null && d > 2000) {
       var hrs = Math.max(mins, 1) / 60, kmh = (d / 1000) / hrs;
       if (kmh > 150) tags.push('TELEPORT');
@@ -872,6 +899,7 @@ function _summary(me, month, day) {
   _rows(SH.visits).forEach(function (v) {
     var r = reps[_low(v.rep_email)];
     if (!r) return;
+    if (!_counted(v)) return;
     var d = _ds(v.date) || _dsTz(v.ts), f = _bool(v.flag);
     if (d >= mStart && d <= mEnd) { r.visitsMTD++; if (f) r.fakeMTD++; r.workDays[d] = 1; }
     if (d === day) { r.visitsDay++; if (f) r.fakeDay++; }
@@ -919,7 +947,7 @@ function _details(me, r) {
   if (/Day$/.test(kind)) { from = to = day; }
   else { from = month + '-01'; to = _monthEnd(month); }
   var res = _visits(me, { from: from, to: to, rep: rep });
-  return { kind: kind, rows: res.visits.filter(function (v) { return !onlyFake || v.flag; }) };
+  return { kind: kind, rows: res.visits.filter(function (v) { return v.status === 'done' && (!onlyFake || v.flag); }) };
 }
 
 /* ================================================================
@@ -999,4 +1027,184 @@ function _importSalesRows(me, rows, dryRun) {
   return { rows: check, toAdd: add.length, totals: tot, saved: !dryRun,
     errors: check.filter(function (r) { return r.status === 'error'; }).length,
     duplicates: check.filter(function (r) { return r.status === 'duplicate'; }).length };
+}
+
+/* ================================================================
+ *  Check-in / check-out visits (v4)
+ *  Start visit  → customer + location (arrival)
+ *  Finish visit → person, mobile + location (departure)
+ *  The time between them is the visit duration.
+ * ================================================================ */
+function _visitDay(v) { return _ds(v.date) || _dsTz(v.ts); }
+function _openVisitOf(email) {
+  var today = _today();
+  return _rows(SH.visits).filter(function (v) {
+    return _low(v.rep_email) === _low(email) && _low(v.status) === 'open' && _visitDay(v) === today;
+  })[0] || null;
+}
+function _gpsIn(g) {
+  g = g || {};
+  var lat = _num(g.lat), lon = _num(g.lon);
+  var ok = lat !== null && lon !== null && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0);
+  return { ok: ok, lat: lat, lon: lon, acc: _num(g.accuracy), alt: _num(g.altitude), mock: _bool(g.mock),
+    source: _str(g.source).slice(0, 30), n: _num(g.n) || 1, spread: _num(g.spread), accKinds: _num(g.accKinds) };
+}
+/** Several readings that are exactly the same, with "perfect" accuracy = simulated location. */
+function _synthetic(g) {
+  return g.n >= 4 && g.spread === 0 && g.accKinds === 1 && g.acc !== null && g.acc <= 20;
+}
+function _gpsInfo(g) {
+  return JSON.stringify({ n: g.n, sp: g.spread, ak: g.accKinds, alt: g.alt === null ? null : Math.round(g.alt), src: g.source });
+}
+function _visitStart(v) {   // Date of check-in
+  if (Object.prototype.toString.call(v.ts) === '[object Date]' && !isNaN(v.ts.getTime())) return v.ts;
+  var d = _visitDay(v), t = _ts(v.time) || '00:00';
+  return new Date(d + 'T' + t + ':00+03:00');
+}
+function _shared(device, email, today) {
+  if (!device) return false;
+  return _rows(SH.visits).some(function (x) {
+    return _str(x.device_id) === device && _low(x.rep_email) !== email && _visitDay(x) === today && _low(x.status) !== 'cancelled';
+  });
+}
+
+function _startVisit(me, v) {
+  v = v || {};
+  var code = _str(v.code), g = _gpsIn(v.gps), missing = [];
+  if (!code) missing.push('CUSTOMER');
+  if (!g.ok) missing.push('LOCATION');
+  if (missing.length) throw _err('VISIT_MISSING', missing.join(','));
+  return _lock(function () {
+    var client = _rows(SH.clients).filter(function (c) { return _str(c.code) === code; })[0];
+    if (!client) throw _err('VISIT_MISSING', 'CUSTOMER');
+    if (me.role !== 'manager' && _low(client.rep_email) !== me.email) throw _err('NOT_YOUR_CLIENT');
+    var today = _today();
+    // open visits left from earlier days → unfinished
+    _rows(SH.visits).forEach(function (x) {
+      if (_low(x.rep_email) === me.email && _low(x.status) === 'open' && _visitDay(x) !== today)
+        _update(SH.visits, x._row, { status: 'unfinished' });
+    });
+    if (_openVisitOf(me.email)) throw _err('OPEN_VISIT');
+    var now = new Date(), time = _nowTime();
+    var mine = _rows(SH.visits).filter(function (x) {
+      return _low(x.rep_email) === me.email && _visitDay(x) === today;
+    }).sort(function (a, b) { return _ts(a.time).localeCompare(_ts(b.time)); });
+    var chk = _check(client, { lat: g.lat, lon: g.lon, acc: g.acc, mock: g.mock, time: time, now: now }, mine);
+    if (_synthetic(g)) chk.tags.push('SYNTH');
+    var device = _str(v.device).slice(0, 40);
+    if (_shared(device, me.email, today)) chk.tags.push('SHARED_DEVICE');
+    var id = 'V' + Utilities.formatDate(now, TZ, 'yyMMddHHmmss') + Math.floor(Math.random() * 900 + 100);
+    _append(SH.visits, {
+      id: id, ts: now, date: "'" + today, time: "'" + time, rep_email: me.email, rep_name: me.name,
+      client_code: code, client_name: _str(client.name), visit_type: 'visit',
+      lat: g.lat, lon: g.lon, accuracy: g.acc === null ? '' : Math.round(g.acc), altitude: g.alt === null ? '' : g.alt,
+      mock: g.mock, distance_m: chk.distance === null ? '' : chk.distance,
+      flag: chk.tags.some(function (t) { return STRONG_TAGS.indexOf(t) >= 0; }), tags: chk.tags.join(' '),
+      source: g.source || 'web', status: 'open', gps_info: _gpsInfo(g), device_id: device,
+      platform: _str(v.platform).slice(0, 30)
+    });
+    var row = _rows(SH.visits).filter(function (x) { return _str(x.id) === id; })[0];
+    return _visitOut(row, _clientMap(), false);
+  });
+}
+
+function _finishVisit(me, v) {
+  v = v || {};
+  var person = _str(v.person), mobile = _digits(_str(v.mobile)).replace(/[\s-]/g, ''), g = _gpsIn(v.gps), missing = [];
+  if (!person) missing.push('PERSON');
+  if (!mobile) missing.push('MOBILE');
+  else if (!/^\+?\d{8,15}$/.test(mobile)) missing.push('MOBILE_BAD');
+  if (!g.ok) missing.push('LOCATION');
+  if (missing.length) throw _err('VISIT_MISSING', missing.join(','));
+  return _lock(function () {
+    var row = _rows(SH.visits).filter(function (x) { return _str(x.id) === _str(v.id); })[0];
+    if (!row || _low(row.rep_email) !== me.email) throw _err('NOT_FOUND');
+    if (_low(row.status) !== 'open') throw _err('VISIT_CLOSED');
+    var s = _settings(), now = new Date(), time = _nowTime();
+    var mins = Math.max(0, Math.round((now.getTime() - _visitStart(row).getTime()) / 60000));
+    var client = _rows(SH.clients).filter(function (c) { return _str(c.code) === _str(row.client_code); })[0] || {};
+    var cLat = _num(client.lat), cLon = _num(client.lon);
+    var outDist = (cLat !== null && cLon !== null) ? _haversine(cLat, cLon, g.lat, g.lon) : null;
+    var inOut = _haversine(_num(row.lat), _num(row.lon), g.lat, g.lon);
+    var tags = _str(row.tags).split(/\s+/).filter(Boolean);
+    var add = function (t) { if (tags.indexOf(t) < 0) tags.push(t); };
+    if (mins < s.min_visit_min) add('SHORT');
+    if (g.mock) add('MOCK');
+    if (outDist !== null && outDist > s.far_limit_m) add('OUT_FAR');
+    else if (outDist === null && inOut !== null && inOut > s.far_limit_m) add('OUT_FAR');
+    if (mins >= 3 && g.acc !== null && g.acc <= 20 && _num(row.accuracy) !== null && _num(row.accuracy) <= 20 &&
+        Math.abs(g.lat - _num(row.lat)) < 1e-7 && Math.abs(g.lon - _num(row.lon)) < 1e-7) add('PIN_FROZEN');
+    if (_synthetic(g)) add('SYNTH');
+    if (_shared(_str(v.device).slice(0, 40), me.email, _visitDay(row))) add('SHARED_DEVICE');
+    var flag = tags.some(function (t) { return STRONG_TAGS.indexOf(t) >= 0; });
+    var info = {};
+    try { info = JSON.parse(_str(row.gps_info) || '{}'); } catch (e) { }
+    info.out = JSON.parse(_gpsInfo(g));
+    _update(SH.visits, row._row, {
+      status: 'done', checkout_time: "'" + time, duration_min: mins,
+      out_lat: g.lat, out_lon: g.lon, out_accuracy: g.acc === null ? '' : Math.round(g.acc),
+      out_distance_m: outDist === null ? '' : outDist, person_name: person.slice(0, 80), person_mobile: mobile,
+      comment: _str(v.comment).slice(0, 500), tags: tags.join(' '), flag: flag, mock: _bool(row.mock) || g.mock,
+      gps_info: JSON.stringify(info)
+    });
+    // first clean visit fixes the customer's location
+    if (!flag && client._row && (cLat === null || cLon === null) && (_num(row.accuracy) === null || _num(row.accuracy) <= 150)) {
+      _update(SH.clients, client._row, { lat: _num(row.lat), lon: _num(row.lon) });
+    }
+    if (flag && _bool(s.email_alerts)) {
+      try {
+        MailApp.sendEmail(MANAGER_EMAIL, 'Flagged visit: ' + me.name + ' → ' + _str(row.client_name),
+          'Rep: ' + me.name + '\nCustomer: ' + _str(row.client_name) + '\nTime: ' + _visitDay(row) + ' ' + _ts(row.time) + '–' + time +
+          ' (' + mins + ' min)\nFlags: ' + tags.join(', '));
+      } catch (e) { }
+    }
+    return { id: _str(row.id), client: _str(row.client_name), minutes: mins, from: _ts(row.time), to: time };
+  });
+}
+
+function _cancelVisit(me, id) {
+  return _lock(function () {
+    var row = _rows(SH.visits).filter(function (x) { return _str(x.id) === _str(id); })[0];
+    if (!row || _low(row.rep_email) !== me.email) throw _err('NOT_FOUND');
+    if (_low(row.status) !== 'open') throw _err('VISIT_CLOSED');
+    _update(SH.visits, row._row, { status: 'cancelled', checkout_time: "'" + _nowTime() });
+    return true;
+  });
+}
+
+/* ---------- verify by phone call ---------- */
+function _hashNum(s) { var h = 0; s = String(s); for (var i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; } return h >>> 0; }
+/** A fixed random sample of the day's finished visits (same list every time you open it). */
+function _verifyList(day) {
+  day = _ds(day) || _addDays(_today(), -1);
+  var n = _settings().verify_per_day, cm = _clientMap(), names = _repNames();
+  var all = _rows(SH.visits).filter(function (v) { return _visitDay(v) === day && _counted(v) && _str(v.person_mobile); });
+  var done = all.filter(function (v) { return _low(v.verify_status); });
+  var rest = all.filter(function (v) { return !_low(v.verify_status); })
+    .sort(function (a, b) { return _hashNum(day + a.id) - _hashNum(day + b.id); });
+  // spread across reps: take one per rep in turn
+  var byRep = {}, order = [];
+  rest.forEach(function (v) { var e = _low(v.rep_email); if (!byRep[e]) { byRep[e] = []; order.push(e); } byRep[e].push(v); });
+  order.sort(function (a, b) { return _hashNum(day + a) - _hashNum(day + b); });
+  var pick = [];
+  while (pick.length + done.length < n && order.some(function (e) { return byRep[e].length; })) {
+    order.forEach(function (e) { if (byRep[e].length && pick.length + done.length < n) pick.push(byRep[e].shift()); });
+  }
+  var rows = done.concat(pick).map(function (v) { var o = _visitOut(v, cm, true); if (!o.repName) o.repName = names[o.rep] || o.rep; return o; });
+  rows.sort(function (a, b) { return a.repName.localeCompare(b.repName) || a.time.localeCompare(b.time); });
+  return { day: day, perDay: n, total: all.length, rows: rows };
+}
+function _setVerify(me, id, status) {
+  status = _low(status);
+  if (['', 'confirmed', 'denied', 'noanswer'].indexOf(status) < 0) throw _err('BAD_VALUE');
+  return _lock(function () {
+    var row = _rows(SH.visits).filter(function (x) { return _str(x.id) === _str(id); })[0];
+    if (!row) throw _err('NOT_FOUND');
+    var tags = _str(row.tags).split(/\s+/).filter(function (t) { return t && t !== 'CALL_DENIED'; });
+    if (status === 'denied') tags.push('CALL_DENIED');
+    var flag = tags.some(function (t) { return STRONG_TAGS.indexOf(t) >= 0; });
+    _update(SH.visits, row._row, { verify_status: status, verify_by: status ? me.email : '',
+      verify_at: status ? Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm') : '', tags: tags.join(' '), flag: flag });
+    return _visitOut(_rows(SH.visits).filter(function (x) { return _str(x.id) === _str(id); })[0], _clientMap(), true);
+  });
 }
