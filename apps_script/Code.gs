@@ -50,11 +50,14 @@ var DEFAULT_SETTINGS = {
   email_alerts: 'no',      // "yes" = email the manager on each flagged visit
   currency: 'SAR',
   min_visit_min: 5,        // visits shorter than this (minutes) are flagged
-  verify_per_day: 5        // how many visits to call-check each day
+  verify_per_day: 5,       // how many visits to call-check each day
+  track_from: '08:00',     // automatic location recording: start
+  track_to: '22:00',       //                                end
+  track_every_min: 5       //                                every N minutes
 };
 // Tags that make a visit "fake" (flagged). Others are notes only.
 var STRONG_TAGS = ['MOCK', 'FAR', 'FROZEN', 'TELEPORT', 'ROUND', 'BURST', 'DUP',
-  'SHORT', 'OUT_FAR', 'PIN_FROZEN', 'SYNTH', 'SHARED_DEVICE', 'CALL_DENIED'];
+  'SHORT', 'OUT_FAR', 'PIN_FROZEN', 'SYNTH', 'SHARED_DEVICE', 'CALL_DENIED', 'TRACK_FAR'];
 /** A visit counts in reports when it was finished (or saved by an older version). */
 function _counted(v) { var st = _low(v.status); return st === '' || st === 'done'; }
 
@@ -67,6 +70,16 @@ function doGet() {
     .setTitle(APP_TITLE)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/** Android app posts location batches here (background, no page open). */
+function doPost(e) {
+  var out;
+  try {
+    var req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    out = api({ action: 'track', token: req.token, points: req.points, device: req.device, batch: req.batch });
+  } catch (err) { out = { ok: false, err: 'SERVER', msg: String(err) }; }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
 /** Single entry point called from the page: google.script.run.api(req) */
@@ -104,6 +117,8 @@ var ACTIONS = {
   cancelVisit:     { run: function (me, r) { return _cancelVisit(me, r.id); } },
   verifyList:      { manager: true, run: function (me, r) { return _verifyList(r.day); } },
   setVerify:       { manager: true, run: function (me, r) { return _setVerify(me, r.id, r.status); } },
+  track:           { run: function (me, r) { return _saveTrack(me, r.points, r.device, r.batch); } },
+  trackOf:         { manager: true, run: function (me, r) { return _trackOf(r.rep, r.day); } },
   users:           { manager: true, run: function () { return _usersOut(); } },
   saveUser:        { manager: true, run: function (me, r) { return _saveUser(me, r.user); } },
   resetPassword:   { manager: true, run: function (me, r) { return _resetPassword(r.email); } },
@@ -327,6 +342,9 @@ function _settings() {
   out.far_limit_m = _num(out.far_limit_m) || DEFAULT_SETTINGS.far_limit_m;
   out.min_visit_min = _num(out.min_visit_min) === null ? DEFAULT_SETTINGS.min_visit_min : _num(out.min_visit_min);
   out.verify_per_day = _num(out.verify_per_day) === null ? DEFAULT_SETTINGS.verify_per_day : _num(out.verify_per_day);
+  out.track_from = _ts(out.track_from) || DEFAULT_SETTINGS.track_from;
+  out.track_to = _ts(out.track_to) || DEFAULT_SETTINGS.track_to;
+  out.track_every_min = _num(out.track_every_min) || DEFAULT_SETTINGS.track_every_min;
   return out;
 }
 function _saveSettings(s) {
@@ -338,6 +356,8 @@ function _saveSettings(s) {
       var v = s[k];
       if (k === 'far_limit_m') { v = _num(v); if (!v || v < 50) throw _err('BAD_VALUE', k); }
       if (k === 'min_visit_min' || k === 'verify_per_day') { v = _num(v); if (v === null || v < 0 || v > 120) throw _err('BAD_VALUE', k); }
+      if (k === 'track_every_min') { v = _num(v); if (v === null || v < 1 || v > 60) throw _err('BAD_VALUE', k); }
+      if (k === 'track_from' || k === 'track_to') { v = _ts(v); if (!/^\d{2}:\d{2}$/.test(v)) throw _err('BAD_VALUE', k); v = "'" + v; }
       if (k === 'weekend_days') v = String(v).split(/[ ,]+/).filter(function (x) { return /^[0-6]$/.test(x); }).join(',');
       var row = rows.filter(function (r) { return _str(r.key) === k; })[0];
       if (row) _update(SH.settings, row._row, { value: v }); else _append(SH.settings, { key: k, value: v });
@@ -378,8 +398,10 @@ function _auth(token) {
 }
 function _meOut(me, mustChange) {
   var u = me._u || me;
+  var st = _settings();
   var out = { email: _low(u.email), name: _str(u.name) || _low(u.email), role: _role(u),
-    settings: { currency: _settings().currency } };
+    settings: { currency: st.currency },
+    track: { from: st.track_from, to: st.track_to, every: st.track_every_min } };
   if (mustChange === undefined) mustChange = _hash(DEFAULT_PASSWORD, u.salt) === _str(u.pass_hash);
   out.mustChange = !!mustChange;
   return out;
@@ -1136,6 +1158,11 @@ function _finishVisit(me, v) {
         Math.abs(g.lat - _num(row.lat)) < 1e-7 && Math.abs(g.lon - _num(row.lon)) < 1e-7) add('PIN_FROZEN');
     if (_synthetic(g)) add('SYNTH');
     if (_shared(_str(v.device).slice(0, 40), me.email, _visitDay(row))) add('SHARED_DEVICE');
+    // automatic track points recorded during the visit
+    var tp = _trackOf(me.email, _visitDay(row), _visitStart(row).getTime() - 10 * 60000, now.getTime() + 2 * 60000).points;
+    var tLat = cLat !== null ? cLat : _num(row.lat), tLon = cLat !== null ? cLon : _num(row.lon);
+    if (tp.some(function (q) { return q.mock; })) add('MOCK');
+    if (tp.length >= 2 && tLat !== null && tp.every(function (q) { var dd = _haversine(tLat, tLon, q.lat, q.lon); return dd !== null && dd > Math.max(s.far_limit_m, (q.acc || 0) + 300); })) add('TRACK_FAR');
     var flag = tags.some(function (t) { return STRONG_TAGS.indexOf(t) >= 0; });
     var info = {};
     try { info = JSON.parse(_str(row.gps_info) || '{}'); } catch (e) { }
@@ -1207,4 +1234,85 @@ function _setVerify(me, id, status) {
       verify_at: status ? Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm') : '', tags: tags.join(' '), flag: flag });
     return _visitOut(_rows(SH.visits).filter(function (x) { return _str(x.id) === _str(id); })[0], _clientMap(), true);
   });
+}
+
+/* ================================================================
+ *  Automatic location track (working hours, no buttons)
+ *  Android app: every few minutes in the background → doPost.
+ *  Web / iPhone: every few minutes while the app is open → api('track').
+ *  Stored in one tab per month: Track_yyyy-MM.
+ *  Script property TI_<date> = first row of that date (fast reading).
+ * ================================================================ */
+var TRACK_COLS = ['rep_email', 'date', 'time', 't', 'lat', 'lon', 'acc', 'mock', 'provider', 'battery', 'device', 'src'];
+function _trackSheet(month, create) {
+  var name = 'Track_' + month, ss = _ss(), sh = ss.getSheetByName(name);
+  if (!sh && create) {
+    sh = ss.insertSheet(name);
+    sh.getRange(1, 1, 1, TRACK_COLS.length).setValues([TRACK_COLS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function _inHours(hm, st) { return hm >= st.track_from && hm < st.track_to; }
+function _saveTrack(me, points, device, batch) {
+  points = Array.isArray(points) ? points.slice(0, 500) : [];
+  if (me.role !== 'rep') return { saved: 0, skipped: points.length, reason: 'not a rep' };
+  var cache = CacheService.getScriptCache();
+  batch = _str(batch).slice(0, 60);
+  if (batch && cache.get('B_' + batch)) return { saved: 0, duplicate: true };
+  var st = _settings(), now = Date.now(), byMonth = {}, skipped = 0;
+  points.forEach(function (q) {
+    var t = _num(q.t), lat = _num(q.lat), lon = _num(q.lon);
+    if (t === null || lat === null || lon === null || Math.abs(lat) > 90 || Math.abs(lon) > 180 || (lat === 0 && lon === 0)) { skipped++; return; }
+    if (t > now + 5 * 60000 || t < now - 4 * 864e5) { skipped++; return; }
+    var d = new Date(t), day = Utilities.formatDate(d, TZ, 'yyyy-MM-dd'), hm = Utilities.formatDate(d, TZ, 'HH:mm');
+    if (!_inHours(hm, st)) { skipped++; return; }
+    var m = day.slice(0, 7);
+    (byMonth[m] = byMonth[m] || []).push([me.email, "'" + day, "'" + hm, t, lat, lon,
+      _num(q.acc) === null ? '' : Math.round(_num(q.acc)), _bool(q.mock), _str(q.prov).slice(0, 12),
+      _num(q.bat) === null ? '' : _num(q.bat), _str(device).slice(0, 40), _str(q.src || 'app').slice(0, 10)]);
+  });
+  var saved = 0;
+  _lock(function () {
+    var props = PropertiesService.getScriptProperties();
+    Object.keys(byMonth).forEach(function (m) {
+      var rows = byMonth[m].sort(function (a, b) { return a[3] - b[3]; });
+      var sh = _trackSheet(m, true), start = sh.getLastRow() + 1;
+      sh.getRange(start, 1, rows.length, TRACK_COLS.length).setValues(rows);
+      rows.forEach(function (r, i) {
+        var day = String(r[1]).slice(1);
+        if (!props.getProperty('TI_' + day)) props.setProperty('TI_' + day, String(start + i));
+      });
+      saved += rows.length;
+    });
+  });
+  if (batch) cache.put('B_' + batch, '1', 21600);
+  return { saved: saved, skipped: skipped, track: { from: st.track_from, to: st.track_to, every: st.track_every_min } };
+}
+/** Points of one rep on one day (optionally between two times in ms). */
+function _trackOf(rep, day, fromMs, toMs) {
+  rep = _low(rep); day = _ds(day) || _today();
+  var empty = { day: day, rep: rep, points: [] };
+  var sh = _trackSheet(day.slice(0, 7), false);
+  if (!sh || sh.getLastRow() < 2) return empty;
+  var props = PropertiesService.getScriptProperties();
+  var start = _num(props.getProperty('TI_' + day));
+  if (!start) return empty;
+  var end = _num(props.getProperty('TI_' + _addDays(day, 2)));
+  var last = sh.getLastRow();
+  end = end && end - 1 <= last ? end - 1 : last;
+  if (end < start) return empty;
+  var vals = sh.getRange(start, 1, end - start + 1, TRACK_COLS.length).getValues();
+  var pts = [];
+  vals.forEach(function (r) {
+    if (_low(r[0]) !== rep || _ds(r[1]) !== day) return;
+    var t = _num(r[3]);
+    if (fromMs && t < fromMs) return;
+    if (toMs && t > toMs) return;
+    pts.push({ t: t, time: _ts(r[2]), lat: _num(r[4]), lon: _num(r[5]), acc: _num(r[6]), mock: _bool(r[7]),
+      prov: _str(r[8]), bat: _num(r[9]), src: _str(r[11]) });
+  });
+  pts.sort(function (a, b) { return a.t - b.t; });
+  var st = _settings();
+  return { day: day, rep: rep, points: pts, from: st.track_from, to: st.track_to, every: st.track_every_min };
 }

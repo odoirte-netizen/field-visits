@@ -39,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
     private WebView web;
     private LocationManager lm;
     private static final int REQ_LOC = 101;
+    private static final int REQ_BG = 102;
+    private static final int REQ_NOTIF = 103;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -163,7 +165,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int req, @NonNull String[] p, @NonNull int[] r) {
         super.onRequestPermissionsResult(req, p, r);
-        // nothing to do; next requestLocation() will use whatever was granted
+        // permissions changed → (re)start working-hours tracking if signed in
+        TrackService.start(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        TrackService.start(this);   // e.g. came back from the "Allow all the time" settings page
     }
 
     @Override
@@ -234,6 +243,88 @@ public class MainActivity extends AppCompatActivity {
                     }
                     startActivity(i);
                 } catch (Exception ignore) {}
+            }});
+        }
+
+        // ---------------- working-hours tracking (no buttons for the rep) ----------------
+        /** Page sends {token, from, to, every} after sign-in; "" on sign-out. Reps only. */
+        @JavascriptInterface
+        public void setSession(final String json) {
+            runOnUiThread(new Runnable() { public void run() {
+                android.content.SharedPreferences.Editor ed = getSharedPreferences("fv", MODE_PRIVATE).edit();
+                try {
+                    if (json == null || json.trim().length() == 0) {
+                        ed.remove("token").apply();
+                        TrackService.stop(MainActivity.this);
+                        return;
+                    }
+                    JSONObject o = new JSONObject(json);
+                    ed.putString("token", o.optString("token", ""))
+                      .putString("from", o.optString("from", "08:00"))
+                      .putString("to", o.optString("to", "22:00"))
+                      .putInt("every", o.optInt("every", 5)).apply();
+                    if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(MainActivity.this,
+                            Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MainActivity.this,
+                            new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIF);
+                    }
+                    TrackService.start(MainActivity.this);
+                } catch (Exception ignore) {}
+            }});
+        }
+
+        /** What the page shows in the tracking banner. */
+        @JavascriptInterface
+        public String trackStatus() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("session", TrackService.hasSession(MainActivity.this));
+                o.put("location", TrackService.hasLocationPermission(MainActivity.this));
+                o.put("precise", TrackService.hasFine(MainActivity.this));
+                o.put("background", TrackService.hasBackground(MainActivity.this));
+                o.put("on", locationOn());
+                o.put("running", TrackService.running);
+                o.put("inHours", TrackService.inHours(MainActivity.this));
+                o.put("queued", TrackService.readQueue(MainActivity.this).size());
+                o.put("lastFix", TrackService.lastFixAt);
+                boolean battery = true;
+                if (Build.VERSION.SDK_INT >= 23) {
+                    android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+                    battery = pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+                }
+                o.put("battery", battery);
+                o.put("sdk", Build.VERSION.SDK_INT);
+            } catch (Exception ignore) {}
+            return o.toString();
+        }
+
+        /** "Allow all the time" — Android 11+ opens the setting page for it. */
+        @JavascriptInterface
+        public void requestBackground() {
+            runOnUiThread(new Runnable() { public void run() {
+                if (!hasLoc()) {
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOC);
+                } else if (Build.VERSION.SDK_INT >= 29) {
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, REQ_BG);
+                }
+            }});
+        }
+
+        /** Ask Android not to put the app to sleep (important on Xiaomi / Huawei / Oppo). */
+        @JavascriptInterface
+        public void requestBattery() {
+            runOnUiThread(new Runnable() { public void run() {
+                if (Build.VERSION.SDK_INT < 23) return;
+                try {
+                    Intent i = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:" + getPackageName()));
+                    startActivity(i);
+                } catch (Exception e) {
+                    try { startActivity(new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)); }
+                    catch (Exception ignore) {}
+                }
             }});
         }
 
