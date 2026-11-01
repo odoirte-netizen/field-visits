@@ -25,7 +25,14 @@ These two files are the whole app. The Android APK just opens your `/exec` link,
 - **Visits** — month-to-date totals, average daily visits, coverage, fake %, daily trend, rep trend vs team average, visits by rep / hour / area, full visit list.
 - **Settings** — users & access (add, disable, reset password to `000000`), monthly targets, sales & collection entries (form or paste from Excel), system options.
 
-**Representative** — own summary, new visit, own visits by day, own customers, change password. Reps never see fake-visit flags.
+**Representative** — own summary, visits (Start visit on arrival → Finish visit on leaving, with person name, mobile and location), own visits by day, own customers, change password. Reps never see fake-visit flags.
+
+## Fake-visit protection
+- **Arrive / finish:** each visit has an arrival and a departure location and a duration. Visits shorter than the minimum (Settings → System, default 5 min) are flagged.
+- **Automatic location 08:00–22:00 (no buttons):** the Android app records the location every 5 minutes in the background (permanent notification, needs "Allow all the time"); iPhone/browser records while the app is open. Stored in tabs `Track_yyyy-MM`. Visits are flagged when the track was far from the customer or showed fake GPS.
+- **Other checks:** fake-GPS app, far from customer, identical repeated readings (simulated), identical pin at arrival and departure, phone used by two reps, impossible travel speed.
+- **Verify by call:** Visits → 📞 Verify by call — a random daily list; "Not visited" marks the visit fake.
+- **Day route:** open any visit → Day route: timeline, travel between visits, map of the location track with gaps.
 
 ## Import visits from FocusQuad
 **Settings → Import visits** → choose the FocusQuad export (`Month.xlsx` / `Daily.xlsx`) →
